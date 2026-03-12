@@ -2,6 +2,12 @@
 
 A set of helper functions for working with broadcast calendar dates, built to be compatible with [date-fns](https://date-fns.org/).
 
+## Installation
+
+```sh
+npm install date-fns-broadcast date-fns
+```
+
 ## What is a Broadcast Calendar?
 
 The Broadcast Calendar is a standardized calendar used primarily in the broadcasting industry for planning and purchasing radio and television programs and advertising. It was designed to provide uniform billing periods and has been widely adopted by broadcasters, agencies, and advertisers.
@@ -36,7 +42,7 @@ Known 53-week years in the 21st century: 2006, 2012, 2017, 2023, 2028, 2034, 204
 - `startOfBroadcastMonth(date)` - Returns the first Monday of the broadcast month
 - `endOfBroadcastMonth(date)` - Returns the last Sunday of the broadcast month
 - `getBroadcastMonth(date)` - Returns the broadcast month number (1-12)
-- `formatBroadcastMonth(date, formatStr)` - Returns the broadcast month as a formatted string
+- `formatBroadcastMonth(date, formatStr?)` - Returns the broadcast month as a formatted string (default: `"MMMM yyyy"`)
 
 ### Quarter Functions
 
@@ -54,4 +60,47 @@ Known 53-week years in the 21st century: 2006, 2012, 2017, 2023, 2028, 2034, 204
 
 - `renderBroadcastCalendar(year)` - Returns a string representation of the broadcast calendar for a given year
 
+## A note on date construction
+
+Avoid constructing dates from short ISO strings like `new Date("2025-01-01")`. JavaScript treats these as UTC midnight, which in non-UTC timezones resolves to the previous day — a common source of off-by-one errors.
+
+Prefer local date construction:
+
+```ts
+// ✅ correct — uses local time
+const date = new Date(2025, 0, 1);
+
+// ⚠️ avoid — parsed as UTC, may resolve to Dec 31 in your timezone
+const date = new Date("2025-01-01");
+```
+
+This applies to all date-fns functions, not just this library.
+
 ## Examples
+
+```ts
+import {
+  getBroadcastWeek,
+  getBroadcastMonth,
+  getBroadcastYear,
+  startOfBroadcastMonth,
+  endOfBroadcastMonth,
+  formatBroadcastMonth,
+} from "date-fns-broadcast";
+
+// Basic lookups
+const date = new Date(2025, 0, 1); // January 1, 2025
+getBroadcastWeek(date);   // 1
+getBroadcastMonth(date);  // 1
+getBroadcastYear(date);   // 2025
+
+// Broadcast month boundaries can differ from calendar month boundaries.
+// January 1, 2025 falls on a Wednesday, so the broadcast month starts
+// on the previous Monday, December 30, 2024.
+startOfBroadcastMonth(date); // 2024-12-30
+endOfBroadcastMonth(date);   // 2025-01-26
+
+// Format a broadcast month
+formatBroadcastMonth(date);           // "January 2025"
+formatBroadcastMonth(date, "MMM yy"); // "Jan 25"
+```
