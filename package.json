@@ -1,9 +1,23 @@
 {
   "name": "date-fns-broadcast",
-  "version": "1.0.1",
-  "description": "Broadcast calendar helpers compatible with date-fns",
+  "version": "1.0.2",
+  "description": "date-fns plugin for broadcast calendar week, month, quarter, and year calculations",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "type": "module",
+  "packageManager": "pnpm@10.14.0",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
+  "peerDependencies": {
+    "date-fns": ">=4.0.0"
+  },
   "tsup": {
     "entry": [
       "src/index.ts"
@@ -11,22 +25,51 @@
     "splitting": false,
     "sourcemap": true,
     "clean": true,
-    "format": "esm"
+    "format": "esm",
+    "dts": true,
+    "external": [
+      "date-fns"
+    ]
   },
   "scripts": {
     "build": "tsup",
-    "test": "vitest run"
+    "test": "vitest run",
+    "release": "release-it"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brightloudnoise/date-fns-broadcast.git"
+  },
+  "homepage": "https://github.com/brightloudnoise/date-fns-broadcast#readme",
+  "bugs": {
+    "url": "https://github.com/brightloudnoise/date-fns-broadcast/issues"
+  },
+  "keywords": [
+    "date-fns",
+    "broadcast",
+    "calendar",
+    "broadcast-calendar",
+    "media",
+    "television",
+    "date"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "author": "Geoff Holden <geoff@brightloudnoise.com>",
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.14.0",
+    "@release-it/conventional-changelog": "^10.0.5",
     "@types/node": "^22.8.6",
     "@vitest/coverage-v8": "^2.1.6",
     "date-fns": "^4.1.0",
     "eslint": "^9.14.0",
     "globals": "^15.11.0",
     "prettier": "^3.3.3",
+    "release-it": "^19.2.4",
     "tslib": "^2.8.1",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
