@@ -55,6 +55,21 @@ Known 53-week years in the 21st century: 2006, 2012, 2017, 2023, 2028, 2034, 204
 - `startOfBroadcastYear(date)` - Returns the start of the broadcast year
 - `endOfBroadcastYear(date)` - Returns the end of the broadcast year
 - `getBroadcastYear(date)` - Returns the broadcast year number
+- `startOfBroadcastYearByNumber(year)` - Returns the start of the broadcast year for a given year number
+
+### Enumeration Functions
+
+- `eachBroadcastWeekOfYear(year)` - Returns an array of week-start Mondays for the broadcast year (52 or 53 dates)
+- `eachBroadcastWeekOfQuarter(date)` - Returns an array of week-start Mondays for the broadcast quarter (13 or 14 dates)
+- `eachBroadcastWeekOfMonth(date)` - Returns an array of week-start Mondays for the broadcast month (4 or 5 dates)
+- `eachBroadcastQuarterOfYear(year)` - Returns an array of 4 quarter-start dates for the broadcast year
+- `eachBroadcastMonthOfYear(year)` - Returns an array of 12 month-start dates for the broadcast year
+- `eachBroadcastMonthOfQuarter(date)` - Returns an array of 3 month-start dates for the broadcast quarter containing the given date
+
+### Count Functions
+
+- `countBroadcastWeeksInYear(year)` - Returns the number of broadcast weeks in the year (`52 | 53`)
+- `countBroadcastWeeksInMonth(date)` - Returns the number of broadcast weeks in the month (`4 | 5`)
 
 ### Utility Functions
 
