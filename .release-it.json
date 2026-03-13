@@ -1,4 +1,7 @@
 {
+  "hooks": {
+    "before:release": "pnpm build"
+  },
   "git": {
     "commitMessage": "chore: release v${version}"
   },
