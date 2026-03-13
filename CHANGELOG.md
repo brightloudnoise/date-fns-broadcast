@@ -1,5 +1,7 @@
 # Changelog
 
+## [1.1.1](https://github.com/brightloudnoise/date-fns-broadcast/compare/v1.1.0...v1.1.1) (2026-03-13)
+
 # [1.1.0](https://github.com/brightloudnoise/date-fns-broadcast/compare/v1.0.3...v1.1.0) (2026-03-13)
 
 
