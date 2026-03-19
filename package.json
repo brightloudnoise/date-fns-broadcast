@@ -15,7 +15,10 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
-    ]
+    ],
+    "overrides": {
+      "undici": ">=6.24.0"
+    }
   },
   "peerDependencies": {
     "date-fns": ">=4.0.0"
