@@ -64,7 +64,7 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.14.0",
-    "@release-it/conventional-changelog": "^10.0.5",
+    "@release-it/conventional-changelog": "^10.0.6",
     "@types/node": "^22.8.6",
     "@vitest/coverage-v8": "^2.1.6",
     "date-fns": "^4.1.0",
