@@ -1,22 +1,18 @@
 import type { DateArg } from "date-fns";
-import { toDate, format } from "date-fns";
-import { getBroadcastMonth } from "../getBroadcastMonth";
-import { getBroadcastYear } from "../getBroadcastYear";
+import { format } from "date-fns";
+import { broadcastMonthAnchor } from "../_internal";
 
 /**
- * Returns the formatted broadcast month label (e.g., "January 2024")
- * @param date Any date within the broadcast month
- * @param formatStr Optional custom format string (defaults to "MMMM yyyy")
+ * Formats the broadcast month containing `date` using a date-fns format string.
+ *
+ * The label reflects the calendar month/year that the broadcast month is named
+ * after (e.g. Aug 26, 2024 → "September 2024"). This is a property of the
+ * broadcast month calendar alone, so — unlike the year-relative helpers — it
+ * takes no `yearStartMonth` option.
  */
 export function formatBroadcastMonth(
   date: DateArg<Date>,
   formatStr: string = "MMMM yyyy",
 ) {
-  const dateObj = toDate(date);
-  const month = getBroadcastMonth(dateObj);
-  const year = getBroadcastYear(dateObj);
-
-  // Create a date object for the first of the month in the broadcast year
-  const formattingDate = new Date(year, month - 1, 1);
-  return format(formattingDate, formatStr);
+  return format(broadcastMonthAnchor(date), formatStr);
 }

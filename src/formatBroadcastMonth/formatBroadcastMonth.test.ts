@@ -21,6 +21,13 @@ describe("formatBroadcastMonth", () => {
     expect(formatBroadcastMonth(new Date(2025, 0, 1))).toBe("January 2025");
   });
 
+  it("labels a date by its broadcast month when the month starts on Sunday", () => {
+    // Sep 1, 2024 is Sunday → broadcast September starts Mon Aug 26, 2024
+    expect(formatBroadcastMonth(new Date(2024, 7, 26))).toBe("September 2024");
+    // Aug 25, 2024 is still part of broadcast August
+    expect(formatBroadcastMonth(new Date(2024, 7, 25))).toBe("August 2024");
+  });
+
   it("accepts custom format strings", () => {
     const date = new Date(2024, 0, 15);
     expect(formatBroadcastMonth(date, "MMM yyyy")).toBe("Jan 2024");

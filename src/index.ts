@@ -1,3 +1,5 @@
+export type { BroadcastOptions, YearStartMonth } from "./types";
+export { DEFAULT_YEAR_START_MONTH } from "./types";
 export { startOfBroadcastWeek } from "./startOfBroadcastWeek";
 export { endOfBroadcastWeek } from "./endOfBroadcastWeek";
 export { getBroadcastWeek } from "./getBroadcastWeek";

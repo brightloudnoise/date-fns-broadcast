@@ -14,7 +14,7 @@ describe("startOfBroadcastMonth", () => {
     expect(result.toISOString()).toBe(new Date(2024, 1, 26).toISOString());
   });
 
-  it("returns previous Monday when month starts on other days", () => {
+  it("returns previous Monday when month starts on Sunday", () => {
     const date = new Date(2024, 8, 1);
     const result = startOfBroadcastMonth(date);
     expect(result.toISOString()).toBe(new Date(2024, 7, 26).toISOString());
