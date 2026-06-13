@@ -1,0 +1,3 @@
+# YearStartMonth typed as full 0–11 union, not a named subset
+
+`YearStartMonth` is typed as `0 | 1 | 2 | … | 11` rather than a narrower union like `0 | 8` (January | September). The algorithm that determines Broadcast Year boundaries and 53-week years is already correct for any anchor month, so restricting the type to known-good values would add a false constraint. Widening a union type later is a breaking change for discriminated-union consumers; broadening it now costs nothing. Callers using unsupported values do so at their own risk — January and September are the only well-tested and documented values.
