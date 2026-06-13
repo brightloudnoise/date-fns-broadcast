@@ -1,8 +1,8 @@
 import { endOfBroadcastMonth } from "../endOfBroadcastMonth";
 import { getBroadcastWeek } from "../getBroadcastWeek";
 import { startOfBroadcastMonth } from "../startOfBroadcastMonth";
+import { resolveYearStartMonth } from "../_broadcastYearCore";
 import type { BroadcastOptions } from "../types";
-import { DEFAULT_YEAR_START_MONTH } from "../types";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -13,9 +13,14 @@ export function renderBroadcastCalendar(
   year: number,
   options?: BroadcastOptions,
 ) {
-  const yearStartMonth = options?.yearStartMonth ?? DEFAULT_YEAR_START_MONTH;
+  const yearStartMonth = resolveYearStartMonth(options);
 
-  let calendar = `\n${year} Broadcast Calendar\n`;
+  // A non-January broadcast year spans two calendar years (e.g. a September
+  // 2024 year runs through August 2025), so label it as a range.
+  const endYear = year + Math.floor((yearStartMonth + 11) / 12);
+  const yearLabel = endYear === year ? `${year}` : `${year}-${endYear}`;
+
+  let calendar = `\n${yearLabel} Broadcast Calendar\n`;
 
   for (let i = 0; i < 12; i++) {
     const absMonth = yearStartMonth + i;

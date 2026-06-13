@@ -1,20 +1,16 @@
-import { startOfBroadcastMonth } from "../startOfBroadcastMonth";
-import { getBroadcastYear } from "../getBroadcastYear";
-import { getBroadcastQuarter } from "../getBroadcastQuarter";
+import type { DateArg } from "date-fns";
+import { broadcastMonthStartByOrdinal } from "../_broadcastMonthCore";
+import { broadcastQuarter } from "../_broadcastQuarterCore";
+import { resolveYearStartMonth } from "../_broadcastYearCore";
 import type { BroadcastOptions } from "../types";
-import { DEFAULT_YEAR_START_MONTH } from "../types";
 
 export function eachBroadcastMonthOfQuarter(
-  date: Date,
+  date: DateArg<Date>,
   options?: BroadcastOptions,
 ): Date[] {
-  const yearStartMonth = options?.yearStartMonth ?? DEFAULT_YEAR_START_MONTH;
-  const broadcastYear = getBroadcastYear(date, options);
-  const quarter = getBroadcastQuarter(date, options);
-  return [0, 1, 2].map((i) => {
-    const absMonth = yearStartMonth + (quarter - 1) * 3 + i;
-    return startOfBroadcastMonth(
-      new Date(broadcastYear + Math.floor(absMonth / 12), absMonth % 12, 1),
-    );
-  });
+  const yearStartMonth = resolveYearStartMonth(options);
+  const { year, quarter } = broadcastQuarter(date, yearStartMonth);
+  return [0, 1, 2].map((i) =>
+    broadcastMonthStartByOrdinal(year, (quarter - 1) * 3 + i, yearStartMonth),
+  );
 }

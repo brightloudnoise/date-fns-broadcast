@@ -1,15 +1,11 @@
-import { addWeeks } from "date-fns";
+import type { DateArg } from "date-fns";
 import { startOfBroadcastMonth } from "../startOfBroadcastMonth";
 import { endOfBroadcastMonth } from "../endOfBroadcastMonth";
+import { eachBroadcastWeekBetween } from "../_internal";
 
-export function eachBroadcastWeekOfMonth(date: Date): Date[] {
-  const start = startOfBroadcastMonth(date);
-  const end = endOfBroadcastMonth(date);
-  const weeks: Date[] = [];
-  let current = start;
-  while (current <= end) {
-    weeks.push(current);
-    current = addWeeks(current, 1);
-  }
-  return weeks;
+export function eachBroadcastWeekOfMonth(date: DateArg<Date>): Date[] {
+  return eachBroadcastWeekBetween(
+    startOfBroadcastMonth(date),
+    endOfBroadcastMonth(date),
+  );
 }

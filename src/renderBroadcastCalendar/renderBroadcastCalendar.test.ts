@@ -23,3 +23,15 @@ describe("renderBroadcastCalendar (January-based)", () => {
     expect(rows(2023)).toBe(53);
   });
 });
+
+// Visual output — prints the rendered calendars to the console during the run.
+describe("renderBroadcastCalendar (visual)", () => {
+  for (const year of [2023, 2024, 2025]) {
+    it(`renders ${year} (${year === 2023 ? "53" : "52"}-week year)`, () => {
+      console.log(renderBroadcastCalendar(year));
+      expect(renderBroadcastCalendar(year)).toContain(
+        `${year} Broadcast Calendar`,
+      );
+    });
+  }
+});
