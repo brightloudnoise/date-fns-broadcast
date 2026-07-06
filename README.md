@@ -31,49 +31,66 @@ Known 53-week years in the 21st century: 2006, 2012, 2017, 2023, 2028, 2034, 204
 
 ## Functions
 
+Functions whose output depends on where the broadcast year starts accept an optional second (or, for year-number-based functions, only) `options: { yearStartMonth?: 0-11 }` argument — see [Configuring the year start month](#configuring-the-year-start-month) below. Functions that only need Monday-based week/month boundaries don't take it.
+
 ### Week Functions
 
 - `startOfBroadcastWeek(date)` - Returns the Monday of the broadcast week
 - `endOfBroadcastWeek(date)` - Returns the Sunday of the broadcast week
-- `getBroadcastWeek(date)` - Returns the week number (1-53) within the broadcast year
+- `getBroadcastWeek(date, options?)` - Returns the week number (1-53) within the broadcast year
 
 ### Month Functions
 
 - `startOfBroadcastMonth(date)` - Returns the first Monday of the broadcast month
 - `endOfBroadcastMonth(date)` - Returns the last Sunday of the broadcast month
-- `getBroadcastMonth(date)` - Returns the broadcast month number (1-12)
+- `getBroadcastMonth(date, options?)` - Returns the broadcast month number (1-12)
 - `formatBroadcastMonth(date, formatStr?)` - Returns the broadcast month as a formatted string (default: `"MMMM yyyy"`)
 
 ### Quarter Functions
 
-- `startOfBroadcastQuarter(date)` - Returns the first Monday of the broadcast quarter
-- `endOfBroadcastQuarter(date)` - Returns the last Sunday of the broadcast quarter
-- `getBroadcastQuarter(date)` - Returns the quarter number (1-4)
+- `startOfBroadcastQuarter(date, options?)` - Returns the first Monday of the broadcast quarter
+- `endOfBroadcastQuarter(date, options?)` - Returns the last Sunday of the broadcast quarter
+- `getBroadcastQuarter(date, options?)` - Returns the quarter number (1-4)
 
 ### Year Functions
 
-- `startOfBroadcastYear(date)` - Returns the start of the broadcast year
-- `endOfBroadcastYear(date)` - Returns the end of the broadcast year
-- `getBroadcastYear(date)` - Returns the broadcast year number
-- `startOfBroadcastYearByNumber(year)` - Returns the start of the broadcast year for a given year number
+- `startOfBroadcastYear(date, options?)` - Returns the start of the broadcast year
+- `endOfBroadcastYear(date, options?)` - Returns the end of the broadcast year
+- `getBroadcastYear(date, options?)` - Returns the broadcast year number
+- `startOfBroadcastYearByNumber(year, options?)` - Returns the start of the broadcast year for a given year number
 
 ### Enumeration Functions
 
-- `eachBroadcastWeekOfYear(year)` - Returns an array of week-start Mondays for the broadcast year (52 or 53 dates)
+- `eachBroadcastWeekOfYear(year, options?)` - Returns an array of week-start Mondays for the broadcast year (52 or 53 dates)
 - `eachBroadcastWeekOfQuarter(date)` - Returns an array of week-start Mondays for the broadcast quarter (13 or 14 dates)
 - `eachBroadcastWeekOfMonth(date)` - Returns an array of week-start Mondays for the broadcast month (4 or 5 dates)
-- `eachBroadcastQuarterOfYear(year)` - Returns an array of 4 quarter-start dates for the broadcast year
-- `eachBroadcastMonthOfYear(year)` - Returns an array of 12 month-start dates for the broadcast year
+- `eachBroadcastQuarterOfYear(year, options?)` - Returns an array of 4 quarter-start dates for the broadcast year
+- `eachBroadcastMonthOfYear(year, options?)` - Returns an array of 12 month-start dates for the broadcast year
 - `eachBroadcastMonthOfQuarter(date)` - Returns an array of 3 month-start dates for the broadcast quarter containing the given date
 
 ### Count Functions
 
-- `countBroadcastWeeksInYear(year)` - Returns the number of broadcast weeks in the year (`52 | 53`)
+- `countBroadcastWeeksInYear(year, options?)` - Returns the number of broadcast weeks in the year (`52 | 53`)
 - `countBroadcastWeeksInMonth(date)` - Returns the number of broadcast weeks in the month (`4 | 5`)
 
 ### Utility Functions
 
-- `renderBroadcastCalendar(year)` - Returns a string representation of the broadcast calendar for a given year
+- `renderBroadcastCalendar(year, options?)` - Returns a string representation of the broadcast calendar for a given year. When `yearStartMonth` isn't January, the calendar spans two calendar years and is labeled as a range (e.g. `"2024-2025 Broadcast Calendar"`).
+
+## Configuring the year start month
+
+By default, the broadcast year starts in January (`yearStartMonth: 0`). Pass a different month (`0`-`11`) to anchor the year elsewhere — for example, `8` for a September-anchored broadcast year:
+
+```ts
+import { getBroadcastYear, startOfBroadcastYear } from "date-fns-broadcast";
+
+const date = new Date(2024, 9, 15); // October 15, 2024
+
+getBroadcastYear(date, { yearStartMonth: 8 }); // 2024
+startOfBroadcastYear(date, { yearStartMonth: 8 }); // 2024-08-26 (Monday on/before Sep 1, 2024)
+```
+
+January and September are the only well-tested, documented anchor months.
 
 ## A note on date construction
 
@@ -105,17 +122,42 @@ import {
 
 // Basic lookups
 const date = new Date(2025, 0, 1); // January 1, 2025
-getBroadcastWeek(date);   // 1
-getBroadcastMonth(date);  // 1
-getBroadcastYear(date);   // 2025
+getBroadcastWeek(date); // 1
+getBroadcastMonth(date); // 1
+getBroadcastYear(date); // 2025
 
 // Broadcast month boundaries can differ from calendar month boundaries.
 // January 1, 2025 falls on a Wednesday, so the broadcast month starts
 // on the previous Monday, December 30, 2024.
 startOfBroadcastMonth(date); // 2024-12-30
-endOfBroadcastMonth(date);   // 2025-01-26
+endOfBroadcastMonth(date); // 2025-01-26
 
 // Format a broadcast month
-formatBroadcastMonth(date);           // "January 2025"
+formatBroadcastMonth(date); // "January 2025"
 formatBroadcastMonth(date, "MMM yy"); // "Jan 25"
+```
+
+### September-anchored broadcast year
+
+```ts
+import {
+  getBroadcastYear,
+  getBroadcastMonth,
+  startOfBroadcastYear,
+  endOfBroadcastYear,
+} from "date-fns-broadcast";
+
+const options = { yearStartMonth: 8 }; // September
+
+const octDate = new Date(2024, 9, 15); // October 15, 2024
+getBroadcastYear(octDate, options);  // 2024
+getBroadcastMonth(octDate, options); // 2 (September is month 1)
+startOfBroadcastYear(octDate, options); // 2024-08-26 (Monday on/before Sep 1, 2024)
+endOfBroadcastYear(octDate, options);   // 2025-08-31
+
+// A January date still belongs to the broadcast year that started
+// the previous September.
+const janDate = new Date(2025, 0, 15); // January 15, 2025
+getBroadcastYear(janDate, options);  // 2024
+getBroadcastMonth(janDate, options); // 5
 ```
