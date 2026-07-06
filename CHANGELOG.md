@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.2.0](https://github.com/brightloudnoise/date-fns-broadcast/compare/v1.1.1...v1.2.0) (2026-07-06)
+
+
+### Features
+
+* configurable broadcast year start month ([b36c385](https://github.com/brightloudnoise/date-fns-broadcast/commit/b36c3856925780a81de9b4f6bf07ec72fe5841c7))
+
 ## [1.1.1](https://github.com/brightloudnoise/date-fns-broadcast/compare/v1.1.0...v1.1.1) (2026-03-13)
 
 # [1.1.0](https://github.com/brightloudnoise/date-fns-broadcast/compare/v1.0.3...v1.1.0) (2026-03-13)
