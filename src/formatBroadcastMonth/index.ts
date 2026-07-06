@@ -1,6 +1,6 @@
 import type { DateArg } from "date-fns";
 import { format } from "date-fns";
-import { broadcastMonthAnchor } from "../_internal";
+import { broadcastMonthAnchor } from "../_broadcastMonthCore";
 
 /**
  * Formats the broadcast month containing `date` using a date-fns format string.

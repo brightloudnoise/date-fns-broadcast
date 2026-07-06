@@ -1,11 +1,12 @@
-import { startOfBroadcastWeek } from "../startOfBroadcastWeek";
+import {
+  broadcastYearStart,
+  resolveYearStartMonth,
+} from "../_broadcastYearCore";
 import type { BroadcastOptions } from "../types";
-import { DEFAULT_YEAR_START_MONTH } from "../types";
 
 export function startOfBroadcastYearByNumber(
   year: number,
   options?: BroadcastOptions,
 ): Date {
-  const yearStartMonth = options?.yearStartMonth ?? DEFAULT_YEAR_START_MONTH;
-  return startOfBroadcastWeek(new Date(year, yearStartMonth, 1));
+  return broadcastYearStart(year, resolveYearStartMonth(options));
 }
