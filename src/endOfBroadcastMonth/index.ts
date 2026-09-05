@@ -12,6 +12,8 @@ import {
  * sense: 29 Jan 2024 is in broadcast February, so this answers `Sun 25 Feb
  * 2024`, not January's `Sun 28 Jan`.
  */
-export function endOfBroadcastMonth(date: DateArg<Date>) {
+export function endOfBroadcastMonth<DateType extends Date>(
+  date: DateArg<DateType>,
+): DateType {
   return calendarMonthBlockEnd(broadcastMonthAnchor(date));
 }

@@ -6,10 +6,16 @@ import {
 } from "../_broadcastYearCore";
 import type { BroadcastOptions } from "../types";
 
-export function startOfBroadcastYear(
-  date: DateArg<Date>,
+export function startOfBroadcastYear<DateType extends Date>(
+  date: DateArg<DateType>,
   options?: BroadcastOptions,
-) {
+): DateType {
   const yearStartMonth = resolveYearStartMonth(options);
-  return broadcastYearStart(broadcastYearOf(date, yearStartMonth), yearStartMonth);
+  // `date` is threaded on as the construction context: the year start is keyed
+  // on a year *number*, which carries no zone of its own.
+  return broadcastYearStart(
+    broadcastYearOf(date, yearStartMonth),
+    yearStartMonth,
+    date,
+  );
 }

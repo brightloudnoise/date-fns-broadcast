@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@date-fns/tz':
+        specifier: ^1.5.0
+        version: 1.5.0
       '@eslint/js':
         specifier: ^9.39.5
         version: 9.39.5
@@ -95,6 +98,9 @@ packages:
   '@conventional-changelog/template@1.4.0':
     resolution: {integrity: sha512-aalGyl7dbB5PArRebDIX43ZvBlXrYm9uWzGJ26t+4SzJVPsOuvfILGGbw5X4yX7i50YEmJ8zvbiWnqH/AAnZqg==}
     engines: {node: '>=22'}
+
+  '@date-fns/tz@1.5.0':
+    resolution: {integrity: sha512-lwYN/vDPeNRULcepoE/LO2Pgx+7/RV+S9ARfbc9lr2DtGkOD7pAiruHvbR1RX3Qyf6ja47EWJDMsNK5vK08DJg==}
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -2333,6 +2339,8 @@ snapshots:
       conventional-commits-parser: 7.1.2
 
   '@conventional-changelog/template@1.4.0': {}
+
+  '@date-fns/tz@1.5.0': {}
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true

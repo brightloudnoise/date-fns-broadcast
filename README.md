@@ -108,6 +108,43 @@ const date = new Date("2025-01-01");
 
 This applies to all date-fns functions, not just this library.
 
+## Time zones
+
+Every function that takes a date preserves the class and zone of what you pass
+in, the same way date-fns v4's own functions do. Hand it a
+[`TZDate`](https://github.com/date-fns/tz) and you get a `TZDate` back, resolved
+against **that** zone's wall clock rather than the machine's:
+
+```ts
+import { TZDate } from "@date-fns/tz";
+import { startOfBroadcastMonth } from "date-fns-broadcast";
+
+// 28 Dec 2025 is December's last Sunday, so 29 Dec starts broadcast January.
+const d = new TZDate(2025, 11, 29, 0, 0, 0, "Australia/Sydney");
+
+startOfBroadcastMonth(d);
+// TZDate 2025-12-29T00:00:00.000+11:00 — correct in Sydney,
+// on a machine running anywhere.
+```
+
+`@date-fns/tz` is **not** a dependency of this package, and you do not need it
+unless you already use it. Nothing here imports it; zone support works because
+the library composes date-fns generics instead of calling `new Date(y, m, d)`,
+which would silently re-read the wall clock in the machine's zone.
+
+### The number-keyed exception
+
+A handful of functions are keyed on a year *number* rather than a date, so there
+is no input to take a zone from. These always return plain machine-zone `Date`s:
+
+- `startOfBroadcastYearByNumber`
+- `eachBroadcastMonthOfYear`, `eachBroadcastQuarterOfYear`, `eachBroadcastWeekOfYear`
+- `countBroadcastWeeksInYear`
+- `renderBroadcastCalendar`
+
+If you need those in a specific zone, derive them from a date-taking function
+instead.
+
 ## Examples
 
 ```ts

@@ -4,10 +4,12 @@ import {
   getDay,
   getYear,
   isLeapYear,
+  subMilliseconds,
   toDate,
 } from "date-fns";
 import { startOfBroadcastWeek } from "./startOfBroadcastWeek";
 import { eachBroadcastWeekBetween } from "./_internal";
+import { monthFirst } from "./_broadcastMonthCore";
 import type { BroadcastOptions, YearStartMonth } from "./types";
 import { DEFAULT_YEAR_START_MONTH } from "./types";
 
@@ -37,8 +39,12 @@ export function resolveYearStartMonth(
  * Broadcast Year Start for a given Broadcast Year Number: the Monday on/before
  * the Anchor Date (the first day of the Year Start Month).
  */
-export function broadcastYearStart(year: number, ysm: YearStartMonth): Date {
-  return startOfBroadcastWeek(new Date(year, ysm, 1));
+export function broadcastYearStart<DateType extends Date>(
+  year: number,
+  ysm: YearStartMonth,
+  context?: DateArg<DateType>,
+): DateType {
+  return startOfBroadcastWeek(monthFirst(year, ysm, context));
 }
 
 /**
@@ -46,9 +52,15 @@ export function broadcastYearStart(year: number, ysm: YearStartMonth): Date {
  * Anchor Date falls on a Sunday, or on a Saturday in a year whose nearest
  * following February is a leap month.
  */
-export function is53WeekYear(year: number, ysm: YearStartMonth): boolean {
-  const dayOfWeek = getDay(new Date(year, ysm, 1));
+export function is53WeekYear<DateType extends Date>(
+  year: number,
+  ysm: YearStartMonth,
+  context?: DateArg<DateType>,
+): boolean {
+  const dayOfWeek = getDay(monthFirst(year, ysm, context));
   const yearWithFeb = ysm >= 2 ? year + 1 : year;
+  // Leap-ness is a property of the year number alone, so this one needs no
+  // context: no instant derived from it escapes.
   const leap = isLeapYear(new Date(yearWithFeb, 0, 1));
   return dayOfWeek === 0 || (leap && dayOfWeek === 6);
 }
@@ -68,28 +80,33 @@ export function broadcastYearOf(
   const calendarYear = getYear(dateObj);
 
   if (
-    dateObj >= broadcastYearStart(calendarYear + 1, ysm) &&
-    !is53WeekYear(calendarYear, ysm)
+    dateObj >= broadcastYearStart(calendarYear + 1, ysm, dateObj) &&
+    !is53WeekYear(calendarYear, ysm, dateObj)
   ) {
     return calendarYear + 1;
   }
-  if (dateObj < broadcastYearStart(calendarYear, ysm)) {
+  if (dateObj < broadcastYearStart(calendarYear, ysm, dateObj)) {
     return calendarYear - 1;
   }
   return calendarYear;
 }
 
 /** Last instant of a Broadcast Year: the next year's start minus 1ms. */
-export function broadcastYearEnd(year: number, ysm: YearStartMonth): Date {
-  return new Date(broadcastYearStart(year + 1, ysm).getTime() - 1);
+export function broadcastYearEnd<DateType extends Date>(
+  year: number,
+  ysm: YearStartMonth,
+  context?: DateArg<DateType>,
+): DateType {
+  return subMilliseconds(broadcastYearStart(year + 1, ysm, context), 1);
 }
 
 /** Whole weeks in a Broadcast Year: 53 in a 53-Week Year, otherwise 52. */
-export function broadcastWeekCount(
+export function broadcastWeekCount<DateType extends Date>(
   year: number,
   ysm: YearStartMonth,
+  context?: DateArg<DateType>,
 ): 52 | 53 {
-  return is53WeekYear(year, ysm) ? 53 : 52;
+  return is53WeekYear(year, ysm, context) ? 53 : 52;
 }
 
 /** Every Broadcast Week Start of a year, in order (length === week count). */
@@ -113,19 +130,19 @@ export function broadcastWeekOf(
   const weekNumber =
     differenceInWeeks(
       startOfBroadcastWeek(dateObj),
-      broadcastYearStart(year, ysm),
+      broadcastYearStart(year, ysm, dateObj),
     ) + 1;
-  return Math.min(weekNumber, broadcastWeekCount(year, ysm));
+  return Math.min(weekNumber, broadcastWeekCount(year, ysm, dateObj));
 }
 
 /** Immutable descriptor of the Broadcast Year a date belongs to. */
-export interface BroadcastYearInfo {
+export interface BroadcastYearInfo<DateType extends Date = Date> {
   /** Broadcast Year Number (calendar year of the Anchor Date). */
   readonly year: number;
   /** Broadcast Year Start (the Monday on/before the Anchor Date). */
-  readonly start: Date;
+  readonly start: DateType;
   /** Last instant of the year (next start minus 1ms). */
-  readonly end: Date;
+  readonly end: DateType;
   /** Whether this is a 53-Week Year. */
   readonly is53: boolean;
   /** Whole weeks in the year: 52 or 53. */
@@ -136,16 +153,17 @@ export interface BroadcastYearInfo {
  * One-shot descriptor for callers that need several facts about the Broadcast
  * Year a date belongs to. Classifies the year exactly once.
  */
-export function broadcastYear(
-  date: DateArg<Date>,
+export function broadcastYear<DateType extends Date>(
+  date: DateArg<DateType>,
   ysm: YearStartMonth,
-): BroadcastYearInfo {
-  const year = broadcastYearOf(date, ysm);
-  const is53 = is53WeekYear(year, ysm);
+): BroadcastYearInfo<DateType> {
+  const dateObj = toDate(date) as DateType;
+  const year = broadcastYearOf(dateObj, ysm);
+  const is53 = is53WeekYear(year, ysm, dateObj);
   return {
     year,
-    start: broadcastYearStart(year, ysm),
-    end: broadcastYearEnd(year, ysm),
+    start: broadcastYearStart(year, ysm, dateObj),
+    end: broadcastYearEnd(year, ysm, dateObj),
     is53,
     weekCount: is53 ? 53 : 52,
   };

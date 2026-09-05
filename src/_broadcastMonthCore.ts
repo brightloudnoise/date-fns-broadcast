@@ -1,5 +1,15 @@
 import type { DateArg } from "date-fns";
-import { endOfMonth, getDay, setDay, startOfMonth, subDays, toDate } from "date-fns";
+import {
+  addMonths,
+  endOfMonth,
+  getDay,
+  setDay,
+  startOfDay,
+  startOfMonth,
+  subDays,
+  set,
+  toDate,
+} from "date-fns";
 import type { YearStartMonth } from "./types";
 
 /**
@@ -35,7 +45,9 @@ import type { YearStartMonth } from "./types";
  * date, compose it with {@link broadcastMonthAnchor}, which is what
  * `startOfBroadcastMonth` does.
  */
-export function calendarMonthBlockStart(date: DateArg<Date>): Date {
+export function calendarMonthBlockStart<DateType extends Date>(
+  date: DateArg<DateType>,
+): DateType {
   const firstOfMonth = startOfMonth(date);
   return getDay(firstOfMonth) === 1
     ? firstOfMonth
@@ -49,7 +61,9 @@ export function calendarMonthBlockStart(date: DateArg<Date>): Date {
  * The counterpart to {@link calendarMonthBlockStart}, and keyed on the calendar
  * month in exactly the same way.
  */
-export function calendarMonthBlockEnd(date: DateArg<Date>): Date {
+export function calendarMonthBlockEnd<DateType extends Date>(
+  date: DateArg<DateType>,
+): DateType {
   const lastDay = endOfMonth(date);
   // `subDays`, not millisecond arithmetic: a fixed 24h step reads the wrong
   // wall-clock day whenever a DST transition falls inside the span.
@@ -66,19 +80,20 @@ export function calendarMonthBlockEnd(date: DateArg<Date>): Date {
  * falls in broadcast September 2024). The returned Date carries both the
  * calendar month and year of that block, with year rollover handled.
  */
-export function broadcastMonthAnchor(date: DateArg<Date>): Date {
-  const dateObj = toDate(date);
-  const year = dateObj.getFullYear();
-  const month = dateObj.getMonth();
+export function broadcastMonthAnchor<DateType extends Date>(
+  date: DateArg<DateType>,
+): DateType {
+  const dateObj = toDate(date) as DateType;
+  // `addMonths(startOfMonth(...))`, never `new Date(y, m + n, 1)`: bare
+  // construction drops the subclass and re-reads the wall clock in the
+  // machine's zone, so a TZDate would be compared against a machine-zone
+  // instant. `addMonths` still normalizes the year rollover.
+  const thisMonth = startOfMonth(dateObj);
+  const nextMonth = addMonths(thisMonth, 1);
 
-  // Date constructor normalizes month overflow/underflow, rolling the year.
-  if (dateObj >= calendarMonthBlockStart(new Date(year, month + 1, 1))) {
-    return new Date(year, month + 1, 1);
-  }
-  if (dateObj >= calendarMonthBlockStart(new Date(year, month, 1))) {
-    return new Date(year, month, 1);
-  }
-  return new Date(year, month - 1, 1);
+  if (dateObj >= calendarMonthBlockStart(nextMonth)) return nextMonth;
+  if (dateObj >= calendarMonthBlockStart(thisMonth)) return thisMonth;
+  return addMonths(thisMonth, -1);
 }
 
 /**
@@ -99,13 +114,35 @@ export function broadcastMonthNumber(
  * Broadcast Year `year` — i.e. month `ordinal0` steps after the Year Start
  * Month, with calendar-year rollover handled.
  */
-export function broadcastMonthStartByOrdinal(
+export function broadcastMonthStartByOrdinal<DateType extends Date>(
   year: number,
   ordinal0: number,
   ysm: YearStartMonth,
-): Date {
+  context?: DateArg<DateType>,
+): DateType {
   const absMonth = ysm + ordinal0;
   return calendarMonthBlockStart(
-    new Date(year + Math.floor(absMonth / 12), absMonth % 12, 1),
+    monthFirst(year + Math.floor(absMonth / 12), absMonth % 12, context),
+  );
+}
+
+/**
+ * First instant of a calendar month, built **in `context`'s frame** when one is
+ * given so the result keeps that date's class and zone.
+ *
+ * Number-keyed entry points have no date to inherit a zone from, so they take
+ * an explicit context. Without one this is a plain machine-zone `Date`, which
+ * is the documented limit of the number-keyed API.
+ */
+export function monthFirst<DateType extends Date>(
+  year: number,
+  month0: number,
+  context?: DateArg<DateType>,
+): DateType {
+  if (context === undefined) return new Date(year, month0, 1) as DateType;
+  // `set` writes the target zone's wall-clock fields and keeps the subclass;
+  // `constructFrom` would keep the class but reinterpret the instant.
+  return startOfDay(
+    set(toDate(context) as DateType, { year, month: month0, date: 1 }),
   );
 }

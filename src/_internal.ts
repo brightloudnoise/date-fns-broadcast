@@ -7,8 +7,11 @@ import { addWeeks } from "date-fns";
  * week list. Generic: it knows nothing about years, months, or quarters — it
  * just steps a Monday-aligned cursor one week at a time.
  */
-export function eachBroadcastWeekBetween(start: Date, end: Date): Date[] {
-  const weeks: Date[] = [];
+export function eachBroadcastWeekBetween<DateType extends Date>(
+  start: DateType,
+  end: DateType,
+): DateType[] {
+  const weeks: DateType[] = [];
   let current = start;
   while (current <= end) {
     weeks.push(current);
