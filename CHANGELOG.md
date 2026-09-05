@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/brightloudnoise/date-fns-broadcast/compare/v1.2.0...v1.2.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* resolve the broadcast month that contains a date ([e0a6400](https://github.com/brightloudnoise/date-fns-broadcast/commit/e0a640057b1a6c1275e69b2e063a75f7c34a5035))
+
 # [1.2.0](https://github.com/brightloudnoise/date-fns-broadcast/compare/v1.1.1...v1.2.0) (2026-07-06)
 
 
