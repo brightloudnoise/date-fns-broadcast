@@ -1,6 +1,5 @@
 import type { DateArg } from "date-fns";
-import { toDate } from "date-fns";
-import { startOfBroadcastMonth } from "./startOfBroadcastMonth";
+import { endOfMonth, getDay, setDay, startOfMonth, subDays, toDate } from "date-fns";
 import type { YearStartMonth } from "./types";
 
 /**
@@ -12,7 +11,50 @@ import type { YearStartMonth } from "./types";
  * year starts; only its *number* (1..12) is year-relative, so only
  * {@link broadcastMonthNumber} and {@link broadcastMonthStartByOrdinal} take a
  * Year Start Month.
+ *
+ * Two questions live here and they are **not** the same question:
+ *
+ * - *Where does the block named after this calendar month begin and end?* —
+ *   {@link calendarMonthBlockStart} / {@link calendarMonthBlockEnd}. Pure
+ *   calendar arithmetic; the input's day of month is ignored entirely.
+ * - *Which broadcast month contains this date?* — {@link broadcastMonthAnchor}.
+ *
+ * They coincide for most of the month and diverge for the 1–6 days after a
+ * calendar month's last Sunday, which belong to the **next** broadcast month.
+ * Conflating them is what made `startOfBroadcastMonth(29 Jan 2024)` answer
+ * "broadcast January" while `formatBroadcastMonth` answered "February 2024" —
+ * an interval that did not contain its own argument, on 9.7% of all days.
  */
+
+/**
+ * Start of the broadcast block **named after** `date`'s calendar month: the
+ * Monday on or before the 1st of that month.
+ *
+ * Keyed on the calendar month alone, so the day of month is irrelevant. This
+ * is the primitive, not the public question — for the block *containing* a
+ * date, compose it with {@link broadcastMonthAnchor}, which is what
+ * `startOfBroadcastMonth` does.
+ */
+export function calendarMonthBlockStart(date: DateArg<Date>): Date {
+  const firstOfMonth = startOfMonth(date);
+  return getDay(firstOfMonth) === 1
+    ? firstOfMonth
+    : setDay(firstOfMonth, 1, { weekStartsOn: 1 });
+}
+
+/**
+ * End of the broadcast block **named after** `date`'s calendar month: the last
+ * Sunday of that month, at the last instant of the day.
+ *
+ * The counterpart to {@link calendarMonthBlockStart}, and keyed on the calendar
+ * month in exactly the same way.
+ */
+export function calendarMonthBlockEnd(date: DateArg<Date>): Date {
+  const lastDay = endOfMonth(date);
+  // `subDays`, not millisecond arithmetic: a fixed 24h step reads the wrong
+  // wall-clock day whenever a DST transition falls inside the span.
+  return subDays(lastDay, getDay(lastDay));
+}
 
 /**
  * Returns the first day of the calendar month that the broadcast month
@@ -30,10 +72,10 @@ export function broadcastMonthAnchor(date: DateArg<Date>): Date {
   const month = dateObj.getMonth();
 
   // Date constructor normalizes month overflow/underflow, rolling the year.
-  if (dateObj >= startOfBroadcastMonth(new Date(year, month + 1, 1))) {
+  if (dateObj >= calendarMonthBlockStart(new Date(year, month + 1, 1))) {
     return new Date(year, month + 1, 1);
   }
-  if (dateObj >= startOfBroadcastMonth(new Date(year, month, 1))) {
+  if (dateObj >= calendarMonthBlockStart(new Date(year, month, 1))) {
     return new Date(year, month, 1);
   }
   return new Date(year, month - 1, 1);
@@ -63,7 +105,7 @@ export function broadcastMonthStartByOrdinal(
   ysm: YearStartMonth,
 ): Date {
   const absMonth = ysm + ordinal0;
-  return startOfBroadcastMonth(
+  return calendarMonthBlockStart(
     new Date(year + Math.floor(absMonth / 12), absMonth % 12, 1),
   );
 }
