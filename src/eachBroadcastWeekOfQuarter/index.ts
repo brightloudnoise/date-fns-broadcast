@@ -4,10 +4,10 @@ import { resolveYearStartMonth } from "../_broadcastYearCore";
 import { eachBroadcastWeekBetween } from "../_internal";
 import type { BroadcastOptions } from "../types";
 
-export function eachBroadcastWeekOfQuarter(
-  date: DateArg<Date>,
+export function eachBroadcastWeekOfQuarter<DateType extends Date>(
+  date: DateArg<DateType>,
   options?: BroadcastOptions,
-): Date[] {
+): DateType[] {
   const { start, end } = broadcastQuarter(date, resolveYearStartMonth(options));
   return eachBroadcastWeekBetween(start, end);
 }

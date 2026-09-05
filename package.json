@@ -63,6 +63,7 @@
   "author": "Geoff Holden <geoff@brightloudnoise.com>",
   "license": "MIT",
   "devDependencies": {
+    "@date-fns/tz": "^1.5.0",
     "@eslint/js": "^9.39.5",
     "@release-it/conventional-changelog": "^12.0.0",
     "@types/node": "^22.20.1",

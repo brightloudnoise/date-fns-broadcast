@@ -6,10 +6,14 @@ import {
 } from "../_broadcastYearCore";
 import type { BroadcastOptions } from "../types";
 
-export function endOfBroadcastYear(
-  date: DateArg<Date>,
+export function endOfBroadcastYear<DateType extends Date>(
+  date: DateArg<DateType>,
   options?: BroadcastOptions,
-) {
+): DateType {
   const yearStartMonth = resolveYearStartMonth(options);
-  return broadcastYearEnd(broadcastYearOf(date, yearStartMonth), yearStartMonth);
+  return broadcastYearEnd(
+    broadcastYearOf(date, yearStartMonth),
+    yearStartMonth,
+    date,
+  );
 }

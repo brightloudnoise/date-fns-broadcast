@@ -1,5 +1,5 @@
 import type { DateArg } from "date-fns";
-import { addWeeks, differenceInWeeks } from "date-fns";
+import { addWeeks, differenceInWeeks, subMilliseconds, toDate } from "date-fns";
 import { startOfBroadcastWeek } from "./startOfBroadcastWeek";
 import {
   broadcastWeekOf,
@@ -24,27 +24,31 @@ export function quarterOfWeek(weekNumber: number): BroadcastQuarterNumber {
 }
 
 /** Start of quarter `quarter` (1..4) of Broadcast Year `year`. */
-export function broadcastQuarterStart(
+export function broadcastQuarterStart<DateType extends Date>(
   year: number,
   quarter: BroadcastQuarterNumber,
   ysm: YearStartMonth,
-): Date {
-  return addWeeks(broadcastYearStart(year, ysm), (quarter - 1) * 13);
+  context?: DateArg<DateType>,
+): DateType {
+  return addWeeks(broadcastYearStart(year, ysm, context), (quarter - 1) * 13);
 }
 
 /** End of quarter `quarter`: Q4 runs to the year end, otherwise next quarter − 1ms. */
-export function broadcastQuarterEnd(
+export function broadcastQuarterEnd<DateType extends Date>(
   year: number,
   quarter: BroadcastQuarterNumber,
   ysm: YearStartMonth,
-): Date {
-  if (quarter === 4) return broadcastYearEnd(year, ysm);
-  return new Date(
+  context?: DateArg<DateType>,
+): DateType {
+  if (quarter === 4) return broadcastYearEnd(year, ysm, context);
+  return subMilliseconds(
     broadcastQuarterStart(
       year,
       (quarter + 1) as BroadcastQuarterNumber,
       ysm,
-    ).getTime() - 1,
+      context,
+    ),
+    1,
   );
 }
 
@@ -57,36 +61,42 @@ export function broadcastQuarterOf(
 }
 
 /** Immutable descriptor of the Broadcast Quarter a date falls in. */
-export interface BroadcastQuarterInfo {
+export interface BroadcastQuarterInfo<DateType extends Date = Date> {
   /** Broadcast Year Number the quarter belongs to. */
   readonly year: number;
   /** Quarter number, 1..4. */
   readonly quarter: BroadcastQuarterNumber;
   /** Quarter start (a Monday). */
-  readonly start: Date;
+  readonly start: DateType;
   /** Last instant of the quarter. */
-  readonly end: Date;
+  readonly end: DateType;
 }
 
 /**
  * One-shot descriptor for the Broadcast Quarter a date falls in. Classifies the
  * broadcast year exactly once.
  */
-export function broadcastQuarter(
-  date: DateArg<Date>,
+export function broadcastQuarter<DateType extends Date>(
+  date: DateArg<DateType>,
   ysm: YearStartMonth,
-): BroadcastQuarterInfo {
+): BroadcastQuarterInfo<DateType> {
+  const dateObj = toDate(date) as DateType;
   const { year, start: yearStart, end: yearEnd, weekCount } = broadcastYear(
-    date,
+    dateObj,
     ysm,
   );
   const weekNumber = Math.min(
-    differenceInWeeks(startOfBroadcastWeek(date), yearStart) + 1,
+    differenceInWeeks(startOfBroadcastWeek(dateObj), yearStart) + 1,
     weekCount,
   );
   const quarter = quarterOfWeek(weekNumber);
-  const start = addWeeks(yearStart, (quarter - 1) * 13);
-  const end =
-    quarter === 4 ? yearEnd : new Date(addWeeks(start, 13).getTime() - 1);
+  const start: DateType = addWeeks(yearStart, (quarter - 1) * 13);
+  const end: DateType =
+    quarter === 4
+      ? yearEnd
+      : subMilliseconds<DateType, DateType>(
+          addWeeks<DateType, DateType>(start, 13),
+          1,
+        );
   return { year, quarter, start, end };
 }

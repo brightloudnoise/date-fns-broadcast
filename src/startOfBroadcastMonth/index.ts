@@ -14,6 +14,8 @@ import {
  * `formatBroadcastMonth`. Resolving the month first is what makes
  * `startOfBroadcastMonth(d) <= d <= endOfBroadcastMonth(d)` hold for every `d`.
  */
-export function startOfBroadcastMonth(date: DateArg<Date>) {
+export function startOfBroadcastMonth<DateType extends Date>(
+  date: DateArg<DateType>,
+): DateType {
   return calendarMonthBlockStart(broadcastMonthAnchor(date));
 }
