@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.2](https://github.com/brightloudnoise/date-fns-broadcast/compare/v1.2.1...v1.2.2) (2026-09-05)
+
+### Bug Fixes
+
+* keep the caller's time zone through every date-keyed function ([36963fe](https://github.com/brightloudnoise/date-fns-broadcast/commit/36963fe294af735e676b2b835928a37505ff59ac))
+
 ## [1.2.1](https://github.com/brightloudnoise/date-fns-broadcast/compare/v1.2.0...v1.2.1) (2026-09-05)
 
 
