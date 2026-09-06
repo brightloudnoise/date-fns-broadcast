@@ -1,6 +1,6 @@
 import type { DateArg } from "date-fns";
 import {
-  broadcastYearTableMs,
+  boundaryAt,
   broadcastYearTableOf,
   endOfSlice,
   materialize,
@@ -24,8 +24,8 @@ export function monthStartOf<DateType extends Date>(
   date: DateArg<DateType>,
   ysm: YearStartMonth,
 ): DateType {
-  const { table, index, context } = broadcastYearTableOf(date, ysm);
-  return materialize(table[index], context);
+  const { year, index, context } = broadcastYearTableOf(date, ysm);
+  return materialize(boundaryAt(year, ysm, index, context), context);
 }
 
 /** Last instant of the broadcast month containing `date`. */
@@ -33,8 +33,8 @@ export function monthEndOf<DateType extends Date>(
   date: DateArg<DateType>,
   ysm: YearStartMonth,
 ): DateType {
-  const { table, index, context } = broadcastYearTableOf(date, ysm);
-  return endOfSlice(table[index + 1], context);
+  const { year, index, context } = broadcastYearTableOf(date, ysm);
+  return endOfSlice(boundaryAt(year, ysm, index + 1, context), context);
 }
 
 /**
@@ -77,7 +77,7 @@ export function broadcastMonthStartByOrdinal<DateType extends Date>(
   ysm: YearStartMonth,
   context?: DateArg<DateType>,
 ): DateType {
-  return materialize(broadcastYearTableMs(year, ysm, context)[ordinal0], context);
+  return materialize(boundaryAt(year, ysm, ordinal0, context), context);
 }
 
 /**

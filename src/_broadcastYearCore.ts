@@ -4,7 +4,7 @@ import {
   broadcastWeekStart,
   broadcastYearNumberOf,
   broadcastYearTable,
-  broadcastYearTableMs,
+  boundaryAt,
   broadcastYearTableOf,
   endOfSlice,
   materialize,
@@ -38,7 +38,7 @@ export function broadcastYearStart<DateType extends Date>(
   ysm: YearStartMonth,
   context?: DateArg<DateType>,
 ): DateType {
-  return materialize(broadcastYearTableMs(year, ysm, context)[0], context);
+  return materialize(boundaryAt(year, ysm, 0, context), context);
 }
 
 /** Last instant of a Broadcast Year: the next year's start, less 1ms. */
@@ -47,7 +47,7 @@ export function broadcastYearEnd<DateType extends Date>(
   ysm: YearStartMonth,
   context?: DateArg<DateType>,
 ): DateType {
-  return endOfSlice(broadcastYearTableMs(year, ysm, context)[12], context);
+  return endOfSlice(boundaryAt(year, ysm, 12, context), context);
 }
 
 /** Whole weeks in a Broadcast Year: the span of its own boundaries. */
@@ -56,8 +56,10 @@ export function broadcastWeekCount<DateType extends Date>(
   ysm: YearStartMonth,
   context?: DateArg<DateType>,
 ): 52 | 53 {
-  const table = broadcastYearTableMs(year, ysm, context);
-  return weeksBetween(table[0], table[12]) as 52 | 53;
+  return weeksBetween(
+    boundaryAt(year, ysm, 0, context),
+    boundaryAt(year, ysm, 12, context),
+  ) as 52 | 53;
 }
 
 /** Whether this is a 53-Week Year — read off the boundaries, not re-derived. */
@@ -94,7 +96,9 @@ export function broadcastWeekOf(
   date: DateArg<Date>,
   ysm: YearStartMonth,
 ): number {
-  const { table } = broadcastYearTableOf(date, ysm);
-  return weeksBetween(table[0], broadcastWeekStart(date)) + 1;
+  const { year, context } = broadcastYearTableOf(date, ysm);
+  return (
+    weeksBetween(boundaryAt(year, ysm, 0, context), broadcastWeekStart(date)) + 1
+  );
 }
 

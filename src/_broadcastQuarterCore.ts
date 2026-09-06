@@ -1,6 +1,6 @@
 import type { DateArg } from "date-fns";
 import {
-  broadcastYearTableMs,
+  boundaryAt,
   broadcastYearTableOf,
   endOfSlice,
   materialize,
@@ -32,10 +32,7 @@ export function broadcastQuarterStart<DateType extends Date>(
   ysm: YearStartMonth,
   context?: DateArg<DateType>,
 ): DateType {
-  return materialize(
-    broadcastYearTableMs(year, ysm, context)[(quarter - 1) * 3],
-    context,
-  );
+  return materialize(boundaryAt(year, ysm, (quarter - 1) * 3, context), context);
 }
 
 /** Broadcast Quarter (1..4) the date falls in. */
@@ -59,12 +56,12 @@ export function broadcastQuarter<DateType extends Date>(
   date: DateArg<DateType>,
   ysm: YearStartMonth,
 ): BroadcastQuarterInfo<DateType> {
-  const { year, table, index, context } = broadcastYearTableOf(date, ysm);
+  const { year, index, context } = broadcastYearTableOf(date, ysm);
   const quarter = quarterOfMonth(index + 1);
   return {
     year,
     quarter,
-    start: materialize(table[(quarter - 1) * 3], context),
-    end: endOfSlice(table[quarter * 3], context),
+    start: materialize(boundaryAt(year, ysm, (quarter - 1) * 3, context), context),
+    end: endOfSlice(boundaryAt(year, ysm, quarter * 3, context), context),
   };
 }
