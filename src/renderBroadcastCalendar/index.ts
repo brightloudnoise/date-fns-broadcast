@@ -1,7 +1,7 @@
 import { endOfBroadcastMonth } from "../endOfBroadcastMonth";
 import { getBroadcastWeek } from "../getBroadcastWeek";
 import { startOfBroadcastMonth } from "../startOfBroadcastMonth";
-import { resolveYearStartMonth } from "../_broadcastYearCore";
+import { resolveYearStartMonth } from "../_broadcastCalendarCore";
 import type { BroadcastOptions } from "../types";
 
 const MONTH_NAMES = [

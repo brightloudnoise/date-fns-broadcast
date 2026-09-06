@@ -1,5 +1,5 @@
 import type { DateArg } from "date-fns";
-import { MONTH_BOUNDS_ANCHOR, monthStartOf } from "../_broadcastMonthCore";
+import { MONTH_BOUNDS_ANCHOR, periodOf } from "../_broadcastCalendarCore";
 
 /**
  * Start of the broadcast month **containing** `date` — the Monday on or before
@@ -16,5 +16,5 @@ export function startOfBroadcastMonth<DateType extends Date>(
 ): DateType {
   // Month bounds do not depend on the Year Start Month — only month
   // *numbers* are year-relative — so any anchor selects the same slice.
-  return monthStartOf(date, MONTH_BOUNDS_ANCHOR);
+  return periodOf(date, "month", MONTH_BOUNDS_ANCHOR).start;
 }

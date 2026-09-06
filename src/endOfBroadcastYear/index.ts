@@ -1,19 +1,10 @@
 import type { DateArg } from "date-fns";
-import {
-  broadcastYearEnd,
-  broadcastYearOf,
-  resolveYearStartMonth,
-} from "../_broadcastYearCore";
+import { periodOf, resolveYearStartMonth } from "../_broadcastCalendarCore";
 import type { BroadcastOptions } from "../types";
 
 export function endOfBroadcastYear<DateType extends Date>(
   date: DateArg<DateType>,
   options?: BroadcastOptions,
 ): DateType {
-  const yearStartMonth = resolveYearStartMonth(options);
-  return broadcastYearEnd(
-    broadcastYearOf(date, yearStartMonth),
-    yearStartMonth,
-    date,
-  );
+  return periodOf(date, "year", resolveYearStartMonth(options)).end;
 }

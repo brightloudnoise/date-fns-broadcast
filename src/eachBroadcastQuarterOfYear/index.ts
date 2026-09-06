@@ -1,6 +1,4 @@
-import { broadcastQuarterStart } from "../_broadcastQuarterCore";
-import type { BroadcastQuarterNumber } from "../_broadcastQuarterCore";
-import { resolveYearStartMonth } from "../_broadcastYearCore";
+import { periodByOrdinal, resolveYearStartMonth } from "../_broadcastCalendarCore";
 import type { BroadcastOptions } from "../types";
 
 export function eachBroadcastQuarterOfYear(
@@ -8,7 +6,8 @@ export function eachBroadcastQuarterOfYear(
   options?: BroadcastOptions,
 ): Date[] {
   const yearStartMonth = resolveYearStartMonth(options);
-  return ([1, 2, 3, 4] as BroadcastQuarterNumber[]).map((quarter) =>
-    broadcastQuarterStart(year, quarter, yearStartMonth),
+  return Array.from(
+    { length: 4 },
+    (_, q) => periodByOrdinal(year, "quarter", q, yearStartMonth).start,
   );
 }

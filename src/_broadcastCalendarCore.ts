@@ -1,6 +1,7 @@
 import type { DateArg } from "date-fns";
 import {
   addMonths,
+  addWeeks,
   constructFrom,
   getDay,
   getMonth,
@@ -11,7 +12,8 @@ import {
   subDays,
   toDate,
 } from "date-fns";
-import type { YearStartMonth } from "./types";
+import type { BroadcastOptions, YearStartMonth } from "./types";
+import { DEFAULT_YEAR_START_MONTH } from "./types";
 
 /**
  * The generating fact of the Broadcast Calendar, and the only place a period
@@ -54,7 +56,7 @@ const WEEK = 7 * 24 * 60 * 60 * 1000;
  * zone. Number-keyed callers with no date to inherit from get a plain `Date`,
  * which is the documented limit of that part of the API.
  */
-export function monthFirst<DateType extends Date>(
+function monthFirst<DateType extends Date>(
   year: number,
   month0: number,
   context?: DateArg<DateType>,
@@ -132,7 +134,7 @@ function cacheKeyFor(year: number, ysm: YearStartMonth, ctx?: Date): string | nu
  * numbers and then materialise only the one or two boundaries the caller
  * actually wants, instead of building all thirteen every time.
  */
-export function broadcastYearTableMs<DateType extends Date>(
+function broadcastYearTableMs<DateType extends Date>(
   year: number,
   ysm: YearStartMonth,
   context?: DateArg<DateType>,
@@ -163,7 +165,7 @@ export function broadcastYearTableMs<DateType extends Date>(
 }
 
 /** Turn one boundary instant back into a date in the caller's frame. */
-export function materialize<DateType extends Date>(
+function materialize<DateType extends Date>(
   ms: number,
   context?: DateArg<DateType>,
 ): DateType {
@@ -182,7 +184,7 @@ export function materialize<DateType extends Date>(
  * thirteen to answer them made scattered lookups several times more expensive
  * than the arithmetic they replaced.
  */
-export function boundaryAt<DateType extends Date>(
+function boundaryAt<DateType extends Date>(
   year: number,
   ysm: YearStartMonth,
   slot: number,
@@ -208,7 +210,7 @@ export function boundaryAt<DateType extends Date>(
  * the date's own calendar month, then converts that month to a (year, slot)
  * pair arithmetically. No table is built.
  */
-export function monthSlotOf<DateType extends Date>(
+function monthSlotOf<DateType extends Date>(
   dateObj: DateType,
   ysm: YearStartMonth,
 ): { year: number; slot: number } {
@@ -226,64 +228,12 @@ export function monthSlotOf<DateType extends Date>(
   return { year: month0 < ysm ? calendarYear - 1 : calendarYear, slot };
 }
 
-/** The thirteen boundaries as dates, for callers that need all of them. */
-export function broadcastYearTable<DateType extends Date>(
-  year: number,
-  ysm: YearStartMonth,
-  context?: DateArg<DateType>,
-): DateType[] {
-  return broadcastYearTableMs(year, ysm, context).map((ms) =>
-    materialize(ms, context),
-  );
-}
-
-/**
- * The Broadcast Year Number containing `date`.
- *
- * Membership is decided by the boundaries alone: year Y runs from its own start
- * up to (not including) the next. There is deliberately no 53-week special case
- * — a 53-Week Year is the *consequence* of two starts being 53 weeks apart, not
- * an extra rule layered on top. Guarding this with `!is53WeekYear` made a
- * January-anchored year that opens on 31 Dec classify as the year before, for
- * 2013, 2041, 2069 and 2097.
- */
-export function broadcastYearNumberOf(
-  date: DateArg<Date>,
-  ysm: YearStartMonth,
-): number {
-  return containingYear(toDate(date), ysm).year;
-}
-
-/**
- * The containing Broadcast Year and its table, built once.
- *
- * The calendar year is always within one of the answer, so this builds a single
- * table and steps at most once. Doing it as three separate boundary queries
- * cost three tables per lookup.
- */
-function containingYear<DateType extends Date>(
-  dateObj: DateType,
-  ysm: YearStartMonth,
-): { year: number; table: number[] } {
-  const t = dateObj.getTime();
-  let year = getYear(dateObj);
-  let table = broadcastYearTableMs(year, ysm, dateObj);
-  if (t < table[0]) {
-    year -= 1;
-    table = broadcastYearTableMs(year, ysm, dateObj);
-  } else if (t >= table[12]) {
-    year += 1;
-    table = broadcastYearTableMs(year, ysm, dateObj);
-  }
-  return { year, table };
-}
-
 /**
  * The table of the Broadcast Year containing `date`, with the date's month
  * index (0..11) inside it. The one lookup every date-keyed question goes
  * through, so month, quarter and year answers cannot disagree.
  */
-export function broadcastYearTableOf<DateType extends Date>(
+function broadcastYearTableOf<DateType extends Date>(
   date: DateArg<DateType>,
   ysm: YearStartMonth,
 ): { year: number; index: number; context: DateType } {
@@ -311,7 +261,7 @@ export function broadcastYearTableOf<DateType extends Date>(
 }
 
 /** Last instant of the slice that starts at `next`: one millisecond before it. */
-export function endOfSlice<DateType extends Date>(
+function endOfSlice<DateType extends Date>(
   nextMs: number,
   context?: DateArg<DateType>,
 ): DateType {
@@ -319,13 +269,158 @@ export function endOfSlice<DateType extends Date>(
 }
 
 /** Whole weeks between two boundary instants. Exact: periods are whole weeks. */
-export function weeksBetween(start: Date | number, end: Date | number): number {
+function weeksBetween(start: Date | number, end: Date | number): number {
   return Math.round((Number(end) - Number(start)) / WEEK);
 }
 
 /** Broadcast Week start for any date: the Monday on or before it. */
-export function broadcastWeekStart<DateType extends Date>(
+function broadcastWeekStart<DateType extends Date>(
   date: DateArg<DateType>,
 ): DateType {
   return startOfWeek(date, { weekStartsOn: 1 });
+}
+
+// ---------------------------------------------------------------------------
+// The interface. Everything above is how; everything below is what callers ask.
+// ---------------------------------------------------------------------------
+
+/** The three periods that are slices of the year table. */
+export type BroadcastUnit = "month" | "quarter" | "year";
+
+/** How many table slots one unit spans. */
+const SPAN: Record<BroadcastUnit, number> = { month: 1, quarter: 3, year: 12 };
+
+/**
+ * Resolve `yearStartMonth`, applying {@link DEFAULT_YEAR_START_MONTH}. The one
+ * place the default lives — public wrappers call this at their boundary, so the
+ * core never carries an unresolved `undefined`.
+ */
+export function resolveYearStartMonth(
+  options?: BroadcastOptions,
+): YearStartMonth {
+  return options?.yearStartMonth ?? DEFAULT_YEAR_START_MONTH;
+}
+
+/**
+ * The anchor to use when only month *bounds* are wanted.
+ *
+ * Month boundaries are the same instants whatever the Year Start Month — the
+ * anchor decides how months group into years, and therefore their numbers,
+ * never where a month begins. So the public month bounds stay anchor-free, as
+ * their signatures promise.
+ */
+export const MONTH_BOUNDS_ANCHOR = 0 as YearStartMonth;
+
+/** A resolved period: where it runs, which one it is, and whose year it is in. */
+export interface BroadcastPeriod<DateType extends Date = Date> {
+  /** Broadcast Year Number the period belongs to. */
+  readonly year: number;
+  /** 1-based position within that year: month 1..12, quarter 1..4, year 1. */
+  readonly number: number;
+  readonly start: DateType;
+  readonly end: DateType;
+}
+
+/**
+ * The period of `unit` containing `date`.
+ *
+ * The one question every date-keyed public function asks. Month, quarter and
+ * year all resolve through the same table lookup, so they cannot disagree about
+ * which period a date is in — which is exactly how a date could once sit
+ * outside the month its own bounds named.
+ */
+export function periodOf<DateType extends Date>(
+  date: DateArg<DateType>,
+  unit: BroadcastUnit,
+  ysm: YearStartMonth,
+): BroadcastPeriod<DateType> {
+  const { year, index, context } = broadcastYearTableOf(date, ysm);
+  const span = SPAN[unit];
+  const first = Math.floor(index / span) * span;
+  return {
+    year,
+    number: first / span + 1,
+    start: materialize(boundaryAt(year, ysm, first, context), context),
+    end: endOfSlice(boundaryAt(year, ysm, first + span, context), context),
+  };
+}
+
+/**
+ * The `ordinal0`-th (0-based) period of `unit` in Broadcast Year `year`.
+ *
+ * The number-keyed counterpart. `context` supplies the frame to build in: a
+ * year number carries no zone, so without one the result is machine-zoned,
+ * which is the documented limit of the number-keyed API.
+ */
+export function periodByOrdinal<DateType extends Date>(
+  year: number,
+  unit: BroadcastUnit,
+  ordinal0: number,
+  ysm: YearStartMonth,
+  context?: DateArg<DateType>,
+): { start: DateType; end: DateType } {
+  const span = SPAN[unit];
+  const first = ordinal0 * span;
+  return {
+    start: materialize(boundaryAt(year, ysm, first, context), context),
+    end: endOfSlice(boundaryAt(year, ysm, first + span, context), context),
+  };
+}
+
+/**
+ * First of the calendar month the broadcast month containing `date` is *named
+ * after* — broadcast February 2024 answers 1 Feb 2024, though it starts on
+ * 29 Jan. This is the value to format: the month's identity, not its bounds.
+ */
+export function monthAnchorOf<DateType extends Date>(
+  date: DateArg<DateType>,
+  ysm: YearStartMonth,
+): DateType {
+  const { year, index, context } = broadcastYearTableOf(date, ysm);
+  const absMonth = ysm + index;
+  return monthFirst(year + Math.floor(absMonth / 12), absMonth % 12, context);
+}
+
+/** Broadcast Week Number (1..52/53) of a date, within its own Broadcast Year. */
+export function weekNumberOf(
+  date: DateArg<Date>,
+  ysm: YearStartMonth,
+): number {
+  const { year, context } = broadcastYearTableOf(date, ysm);
+  return (
+    weeksBetween(boundaryAt(year, ysm, 0, context), broadcastWeekStart(date)) + 1
+  );
+}
+
+/** Whole weeks in a Broadcast Year: the span of its own boundaries. */
+export function weekCountOf(year: number, ysm: YearStartMonth): 52 | 53 {
+  return weeksBetween(
+    boundaryAt(year, ysm, 0),
+    boundaryAt(year, ysm, 12),
+  ) as 52 | 53;
+}
+
+/**
+ * Every Broadcast Week Start from `start` through `end` inclusive.
+ *
+ * `addWeeks`, not a fixed 7-day step: a DST transition inside the span would
+ * otherwise slide later weeks off Monday.
+ */
+export function weeksBetweenDates<DateType extends Date>(
+  start: DateType,
+  end: DateType,
+): DateType[] {
+  const weeks: DateType[] = [];
+  let current = start;
+  while (current <= end) {
+    weeks.push(current);
+    current = addWeeks(current, 1);
+  }
+  return weeks;
+}
+
+/** Every Broadcast Week Start of a year, in order (length === week count). */
+export function weeksOfYear(year: number, ysm: YearStartMonth): Date[] {
+  const { start, end } = periodByOrdinal(year, "year", 0, ysm);
+  return weeksBetweenDates(start, end);
 }

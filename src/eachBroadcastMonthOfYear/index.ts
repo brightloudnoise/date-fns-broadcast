@@ -1,5 +1,4 @@
-import { broadcastMonthStartByOrdinal } from "../_broadcastMonthCore";
-import { resolveYearStartMonth } from "../_broadcastYearCore";
+import { periodByOrdinal, resolveYearStartMonth } from "../_broadcastCalendarCore";
 import type { BroadcastOptions } from "../types";
 
 export function eachBroadcastMonthOfYear(
@@ -7,7 +6,8 @@ export function eachBroadcastMonthOfYear(
   options?: BroadcastOptions,
 ): Date[] {
   const yearStartMonth = resolveYearStartMonth(options);
-  return Array.from({ length: 12 }, (_, i) =>
-    broadcastMonthStartByOrdinal(year, i, yearStartMonth),
+  return Array.from(
+    { length: 12 },
+    (_, i) => periodByOrdinal(year, "month", i, yearStartMonth).start,
   );
 }
