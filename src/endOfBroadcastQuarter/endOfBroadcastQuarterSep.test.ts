@@ -35,12 +35,18 @@ describe("endOfBroadcastQuarter (September-based)", () => {
     expect(weeks).toBe(13);
   });
 
-  it("Q4 spans 14 weeks in a 53-week year (Sep 1, 2019 is Sunday)", () => {
-    // broadcast year 2019 (Sep-based) has 53 weeks → Q4 gets the extra week
-    const q4Date = new Date(2020, 5, 15); // June 2020 = Q4 of broadcast year 2019
-    const q4Start = startOfBroadcastQuarter(q4Date, sep);
-    const q4End = endOfBroadcastQuarter(q4Date, sep);
-    const weeks = Math.round((q4End.getTime() - q4Start.getTime() + 1) / (7 * 24 * 60 * 60 * 1000));
-    expect(weeks).toBe(14);
+  it("gives the 53rd week to the quarter whose months carry it", () => {
+    // Broadcast year 2019 (Sep-based) has 53 weeks. The extra week is not
+    // handed to Q4 by rule — it falls in Q3, which is Mar/Apr/May 2020 and
+    // holds two 5-week months.
+    const span = (d: Date) =>
+      Math.round(
+        (endOfBroadcastQuarter(d, sep).getTime() -
+          startOfBroadcastQuarter(d, sep).getTime() +
+          1) /
+          (7 * 24 * 60 * 60 * 1000),
+      );
+    expect(span(new Date(2020, 2, 15))).toBe(14); // Q3
+    expect(span(new Date(2020, 5, 15))).toBe(13); // Q4
   });
 });
