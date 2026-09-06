@@ -1,5 +1,17 @@
 # Changelog
 
+# [1.3.0](https://github.com/brightloudnoise/date-fns-broadcast/compare/v1.2.2...v1.3.0) (2026-09-06)
+
+### Bug Fixes
+
+* derive quarters from months, and year membership from its boundaries ([b73d8ce](https://github.com/brightloudnoise/date-fns-broadcast/commit/b73d8ce297c79161b910ca7d08b7ec15852aaaa9))
+
+### BREAKING CHANGES
+
+* quarter boundaries move for the affected quarters, and dates in
+  the four boundary years change broadcast year. Consumers pinning quarter starts
+  should re-derive them.
+
 ## [1.2.2](https://github.com/brightloudnoise/date-fns-broadcast/compare/v1.2.1...v1.2.2) (2026-09-05)
 
 ### Bug Fixes
