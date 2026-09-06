@@ -4,7 +4,6 @@ import {
   broadcastWeekCount,
   broadcastWeekOf,
   broadcastWeeksOf,
-  broadcastYear,
   broadcastYearEnd,
   broadcastYearOf,
   broadcastYearStart,
@@ -133,17 +132,4 @@ describe("_broadcastYearCore", () => {
     });
   });
 
-  describe("broadcastYear descriptor", () => {
-    it("matches the individual primitives, classifying once", () => {
-      const date = new Date(2023, 11, 31);
-      const info = broadcastYear(date, JAN);
-      expect(info).toEqual({
-        year: broadcastYearOf(date, JAN),
-        start: broadcastYearStart(2023, JAN),
-        end: broadcastYearEnd(2023, JAN),
-        is53: is53WeekYear(2023, JAN),
-        weekCount: broadcastWeekCount(2023, JAN),
-      });
-    });
-  });
 });

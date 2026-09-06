@@ -1,8 +1,5 @@
 import type { DateArg } from "date-fns";
-import {
-  broadcastMonthAnchor,
-  calendarMonthBlockEnd,
-} from "../_broadcastMonthCore";
+import { MONTH_BOUNDS_ANCHOR, monthEndOf } from "../_broadcastMonthCore";
 
 /**
  * End of the broadcast month **containing** `date` — the last Sunday of the
@@ -15,5 +12,5 @@ import {
 export function endOfBroadcastMonth<DateType extends Date>(
   date: DateArg<DateType>,
 ): DateType {
-  return calendarMonthBlockEnd(broadcastMonthAnchor(date));
+  return monthEndOf(date, MONTH_BOUNDS_ANCHOR);
 }

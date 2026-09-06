@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { getDay } from "date-fns";
 import {
-  broadcastMonthAnchor,
+  MONTH_BOUNDS_ANCHOR,
   broadcastMonthNumber,
   broadcastMonthStartByOrdinal,
+  monthAnchorOf,
+  monthEndOf,
+  monthStartOf,
 } from "./_broadcastMonthCore";
 import { startOfBroadcastMonth } from "./startOfBroadcastMonth";
 
@@ -11,20 +14,20 @@ const JAN = 0;
 const SEP = 8;
 
 describe("_broadcastMonthCore", () => {
-  describe("broadcastMonthAnchor", () => {
+  describe("monthAnchorOf", () => {
     it("names the broadcast month after the calendar month it belongs to", () => {
       // Aug 26 2024 falls in broadcast September 2024.
-      expect(broadcastMonthAnchor(new Date(2024, 7, 26))).toEqual(
+      expect(monthAnchorOf(new Date(2024, 7, 26), MONTH_BOUNDS_ANCHOR)).toEqual(
         new Date(2024, 8, 1),
       );
       // Feb 26 2024 falls in broadcast March 2024.
-      expect(broadcastMonthAnchor(new Date(2024, 1, 26))).toEqual(
+      expect(monthAnchorOf(new Date(2024, 1, 26), MONTH_BOUNDS_ANCHOR)).toEqual(
         new Date(2024, 2, 1),
       );
     });
 
     it("keeps a date in its own calendar month when the month is not borrowed", () => {
-      expect(broadcastMonthAnchor(new Date(2024, 5, 15))).toEqual(
+      expect(monthAnchorOf(new Date(2024, 5, 15), MONTH_BOUNDS_ANCHOR)).toEqual(
         new Date(2024, 5, 1),
       );
     });
@@ -63,6 +66,25 @@ describe("_broadcastMonthCore", () => {
       );
       for (let i = 0; i < 12; i++) {
         expect(getDay(broadcastMonthStartByOrdinal(2024, i, SEP))).toBe(1);
+      }
+    });
+  });
+
+  describe("month bounds are independent of the Year Start Month", () => {
+    it("selects the same slice under every anchor, every day of 2024-2027", () => {
+      for (
+        let d = new Date(2024, 0, 1, 12);
+        d.getFullYear() < 2028;
+        d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 12)
+      ) {
+        const start = monthStartOf(d, MONTH_BOUNDS_ANCHOR);
+        const end = monthEndOf(d, MONTH_BOUNDS_ANCHOR);
+        for (const ysm of [0, 3, 6, 8, 11] as const) {
+          expect(monthStartOf(d, ysm).getTime()).toBe(start.getTime());
+          expect(monthEndOf(d, ysm).getTime()).toBe(end.getTime());
+        }
+        // and the public wrapper agrees with the projection it delegates to
+        expect(startOfBroadcastMonth(d).getTime()).toBe(start.getTime());
       }
     });
   });

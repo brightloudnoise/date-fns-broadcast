@@ -1,6 +1,6 @@
 import type { DateArg } from "date-fns";
 import { format } from "date-fns";
-import { broadcastMonthAnchor } from "../_broadcastMonthCore";
+import { MONTH_BOUNDS_ANCHOR, monthAnchorOf } from "../_broadcastMonthCore";
 
 /**
  * Formats the broadcast month containing `date` using a date-fns format string.
@@ -14,5 +14,5 @@ export function formatBroadcastMonth(
   date: DateArg<Date>,
   formatStr: string = "MMMM yyyy",
 ) {
-  return format(broadcastMonthAnchor(date), formatStr);
+  return format(monthAnchorOf(date, MONTH_BOUNDS_ANCHOR), formatStr);
 }
