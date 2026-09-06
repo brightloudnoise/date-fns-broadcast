@@ -5,35 +5,34 @@ import {
   broadcastQuarterEnd,
   broadcastQuarterOf,
   broadcastQuarterStart,
-  quarterOfWeek,
+  quarterOfMonth,
 } from "./_broadcastQuarterCore";
 import { broadcastYearEnd, broadcastYearStart } from "./_broadcastYearCore";
+import { broadcastMonthStartByOrdinal } from "./_broadcastMonthCore";
 
 const JAN = 0;
 const SEP = 8;
 
 describe("_broadcastQuarterCore", () => {
-  describe("quarterOfWeek", () => {
-    it("maps 13-week blocks to quarters", () => {
-      expect([1, 13].map(quarterOfWeek)).toEqual([1, 1]);
-      expect([14, 26].map(quarterOfWeek)).toEqual([2, 2]);
-      expect([27, 39].map(quarterOfWeek)).toEqual([3, 3]);
-      expect([40, 52].map(quarterOfWeek)).toEqual([4, 4]);
-    });
-
-    it("clamps the 53rd week of a 53-week year into Q4", () => {
-      expect(quarterOfWeek(53)).toBe(4);
+  describe("quarterOfMonth", () => {
+    it("groups the twelve broadcast months into four quarters", () => {
+      expect([1, 2, 3].map(quarterOfMonth)).toEqual([1, 1, 1]);
+      expect([4, 5, 6].map(quarterOfMonth)).toEqual([2, 2, 2]);
+      expect([7, 8, 9].map(quarterOfMonth)).toEqual([3, 3, 3]);
+      expect([10, 11, 12].map(quarterOfMonth)).toEqual([4, 4, 4]);
     });
   });
 
   describe("broadcastQuarterStart", () => {
-    it("steps 13 weeks per quarter from the year start (January anchor)", () => {
+    it("opens on its own first broadcast month, not 13 weeks along", () => {
       expect(broadcastQuarterStart(2024, 1, JAN)).toEqual(
         broadcastYearStart(2024, JAN),
       );
-      expect(broadcastQuarterStart(2024, 2, JAN)).toEqual(new Date(2024, 3, 1));
-      expect(broadcastQuarterStart(2024, 3, JAN)).toEqual(new Date(2024, 6, 1));
-      expect(broadcastQuarterStart(2024, 4, JAN)).toEqual(new Date(2024, 8, 30));
+      for (const q of [1, 2, 3, 4] as const) {
+        expect(broadcastQuarterStart(2024, q, JAN)).toEqual(
+          broadcastMonthStartByOrdinal(2024, (q - 1) * 3, JAN),
+        );
+      }
     });
 
     it("always lands on a Monday", () => {
@@ -50,10 +49,20 @@ describe("_broadcastQuarterCore", () => {
       );
     });
 
-    it("runs Q4 to the broadcast year end (14 weeks in a 53-week year)", () => {
+    it("runs Q4 to the broadcast year end, with no special case for it", () => {
       expect(broadcastQuarterEnd(2023, 4, JAN)).toEqual(
         broadcastYearEnd(2023, JAN),
       );
+    });
+
+    it("closes each quarter on its own third month's end", () => {
+      for (const ysm of [JAN, SEP] as const) {
+        for (const q of [1, 2, 3, 4] as const) {
+          expect(broadcastQuarterEnd(2024, q, ysm).getTime()).toBe(
+            broadcastMonthStartByOrdinal(2024, q * 3, ysm).getTime() - 1,
+          );
+        }
+      }
     });
   });
 

@@ -16,6 +16,7 @@ Key characteristics:
 
 - Every week starts on Monday and ends on Sunday
 - Every month has either 4 or 5 complete weeks (28 or 35 days)
+- A quarter is three broadcast months, so it has 12, 13 or 14 weeks — only the four together are fixed at the year's 52 or 53
 - Every month ends on the last Sunday of the calendar month
 - The first week of every broadcast month always contains the first day of the calendar month
 - Years can have either 52 or 53 weeks
@@ -62,7 +63,7 @@ Functions whose output depends on where the broadcast year starts accept an opti
 ### Enumeration Functions
 
 - `eachBroadcastWeekOfYear(year, options?)` - Returns an array of week-start Mondays for the broadcast year (52 or 53 dates)
-- `eachBroadcastWeekOfQuarter(date)` - Returns an array of week-start Mondays for the broadcast quarter (13 or 14 dates)
+- `eachBroadcastWeekOfQuarter(date)` - Returns an array of week-start Mondays for the broadcast quarter (12, 13 or 14 dates)
 - `eachBroadcastWeekOfMonth(date)` - Returns an array of week-start Mondays for the broadcast month (4 or 5 dates)
 - `eachBroadcastQuarterOfYear(year, options?)` - Returns an array of 4 quarter-start dates for the broadcast year
 - `eachBroadcastMonthOfYear(year, options?)` - Returns an array of 12 month-start dates for the broadcast year

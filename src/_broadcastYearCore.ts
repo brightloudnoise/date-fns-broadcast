@@ -79,10 +79,14 @@ export function broadcastYearOf(
   const dateObj = toDate(date);
   const calendarYear = getYear(dateObj);
 
-  if (
-    dateObj >= broadcastYearStart(calendarYear + 1, ysm, dateObj) &&
-    !is53WeekYear(calendarYear, ysm, dateObj)
-  ) {
+  // Membership is decided by the boundaries alone: year Y runs from its own
+  // start up to (not including) the next one. There is deliberately no 53-week
+  // special case here — a 53-Week Year is the *consequence* of those two starts
+  // being 53 weeks apart, not an extra rule on top of them. Guarding this with
+  // `!is53WeekYear(calendarYear)` made a January-anchored year that opens on
+  // 31 Dec (1 Jan a Tuesday, after a 53-week year) classify as the year before:
+  // 2013, 2041, 2069 and 2097 all disagreed with startOfBroadcastYearByNumber.
+  if (dateObj >= broadcastYearStart(calendarYear + 1, ysm, dateObj)) {
     return calendarYear + 1;
   }
   if (dateObj < broadcastYearStart(calendarYear, ysm, dateObj)) {

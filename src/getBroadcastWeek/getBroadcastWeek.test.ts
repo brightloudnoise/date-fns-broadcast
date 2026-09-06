@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { getBroadcastWeek } from "./index";
+import { getBroadcastYear } from "../getBroadcastYear";
+import { startOfBroadcastYearByNumber } from "../startOfBroadcastYearByNumber";
 
 describe("getBroadcastWeek", () => {
   it("returns correct week number for regular dates", () => {
@@ -28,9 +30,14 @@ describe("getBroadcastWeek", () => {
     ];
 
     for (const year of fiftyThreeWeekYears) {
+      // Dec 31 is week 53 only while it still belongs to that broadcast year.
+      // When 1 Jan falls on a Tuesday the next year opens on 31 Dec, so that
+      // day is week 1 of the year after: 2012, 2040, 2068 and 2096.
       const date = new Date(year, 11, 31);
-      const weekNum = getBroadcastWeek(date);
-      expect(weekNum).toBe(53);
+      const opensNextYear =
+        startOfBroadcastYearByNumber(year + 1).getTime() === date.getTime();
+      expect(getBroadcastWeek(date)).toBe(opensNextYear ? 1 : 53);
+      expect(getBroadcastYear(date)).toBe(opensNextYear ? year + 1 : year);
     }
   });
 });

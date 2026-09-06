@@ -15,9 +15,18 @@ describe("eachBroadcastWeekOfQuarter (September-based)", () => {
     expect(eachBroadcastWeekOfQuarter(new Date(2023, 5, 15), sep)).toHaveLength(13);
   });
 
-  it("Q4 returns 14 weeks in a 53-week year (Sep 1, 2019 is Sunday)", () => {
-    // broadcast year 2019 (Sep-based) has 53 weeks; Q4 = Jun-Aug 2020
-    expect(eachBroadcastWeekOfQuarter(new Date(2020, 5, 15), sep)).toHaveLength(14);
+  it("puts the 53rd week where the months put it, not always in Q4", () => {
+    // Broadcast year 2019 (Sep-based) has 53 weeks. A quarter is three
+    // broadcast months, so the extra week belongs to whichever quarter holds
+    // the extra 5-week month — here Q3 (Feb 24 – May 31 2020), not Q4.
+    expect(eachBroadcastWeekOfQuarter(new Date(2020, 2, 15), sep)).toHaveLength(14);
+    expect(eachBroadcastWeekOfQuarter(new Date(2020, 5, 15), sep)).toHaveLength(13);
+  });
+
+  it("the four quarters tile the 53-week year exactly", () => {
+    const probes = [new Date(2019, 8, 15), new Date(2019, 11, 15), new Date(2020, 2, 15), new Date(2020, 5, 15)];
+    const total = probes.reduce((n, d) => n + eachBroadcastWeekOfQuarter(d, sep).length, 0);
+    expect(total).toBe(53);
   });
 
   it("all weeks are Mondays", () => {

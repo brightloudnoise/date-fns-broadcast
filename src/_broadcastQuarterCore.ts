@@ -1,26 +1,33 @@
 import type { DateArg } from "date-fns";
-import { addWeeks, differenceInWeeks, subMilliseconds, toDate } from "date-fns";
-import { startOfBroadcastWeek } from "./startOfBroadcastWeek";
+import { subMilliseconds, toDate } from "date-fns";
 import {
-  broadcastWeekOf,
-  broadcastYear,
-  broadcastYearEnd,
-  broadcastYearStart,
-} from "./_broadcastYearCore";
+  broadcastMonthNumber,
+  broadcastMonthStartByOrdinal,
+} from "./_broadcastMonthCore";
+import { broadcastYearOf } from "./_broadcastYearCore";
 import type { YearStartMonth } from "./types";
 
 /**
- * The single source of truth for the Broadcast Quarter: the Broadcast Week →
- * quarter mapping (13-week blocks), and each quarter's start/end. Built on the
- * Broadcast Year core; the "Q4 runs to the year end" special case (14 weeks in
- * a 53-Week Year) lives here, once.
+ * The single source of truth for the Broadcast Quarter.
+ *
+ * A Broadcast Quarter is **three Broadcast Months**, and nothing else. It is not
+ * a 13-week block: months are 4 or 5 weeks, so a quarter runs 12, 13 or 14
+ * weeks, and only the four together are fixed at the year's 52 or 53. Measured
+ * over 2000–2100 on both anchors, quarter lengths come out 12 (×11), 13 (×364)
+ * and 14 (×29), summing to the year count every time.
+ *
+ * Deriving quarters from weeks instead is what let `getBroadcastMonth` and
+ * `getBroadcastQuarter` disagree — 23 Feb 2026 under a September anchor is
+ * month 7, which is quarter 3, while a 13-week block called it quarter 2. Every
+ * boundary here now comes from {@link broadcastMonthStartByOrdinal}, so the two
+ * cannot drift apart again.
  */
 
 export type BroadcastQuarterNumber = 1 | 2 | 3 | 4;
 
-/** Broadcast Week Number (1..53) → its Broadcast Quarter. */
-export function quarterOfWeek(weekNumber: number): BroadcastQuarterNumber {
-  return Math.ceil(Math.min(weekNumber, 52) / 13) as BroadcastQuarterNumber;
+/** Broadcast Month Number (1..12) → its Broadcast Quarter. */
+export function quarterOfMonth(monthNumber: number): BroadcastQuarterNumber {
+  return Math.ceil(monthNumber / 3) as BroadcastQuarterNumber;
 }
 
 /** Start of quarter `quarter` (1..4) of Broadcast Year `year`. */
@@ -30,24 +37,25 @@ export function broadcastQuarterStart<DateType extends Date>(
   ysm: YearStartMonth,
   context?: DateArg<DateType>,
 ): DateType {
-  return addWeeks(broadcastYearStart(year, ysm, context), (quarter - 1) * 13);
+  return broadcastMonthStartByOrdinal(year, (quarter - 1) * 3, ysm, context);
 }
 
-/** End of quarter `quarter`: Q4 runs to the year end, otherwise next quarter − 1ms. */
+/**
+ * End of quarter `quarter`: the instant before its fourth month would start.
+ *
+ * Q4 needs no special case. Month ordinal 12 is the first month of the next
+ * Broadcast Year, so `broadcastMonthStartByOrdinal(year, 12, ysm)` is that
+ * year's start and Q4 ends 1ms before it — the same value `broadcastYearEnd`
+ * gives, reached without a second rule that could drift from the first.
+ */
 export function broadcastQuarterEnd<DateType extends Date>(
   year: number,
   quarter: BroadcastQuarterNumber,
   ysm: YearStartMonth,
   context?: DateArg<DateType>,
 ): DateType {
-  if (quarter === 4) return broadcastYearEnd(year, ysm, context);
   return subMilliseconds(
-    broadcastQuarterStart(
-      year,
-      (quarter + 1) as BroadcastQuarterNumber,
-      ysm,
-      context,
-    ),
+    broadcastMonthStartByOrdinal(year, quarter * 3, ysm, context),
     1,
   );
 }
@@ -57,7 +65,7 @@ export function broadcastQuarterOf(
   date: DateArg<Date>,
   ysm: YearStartMonth,
 ): BroadcastQuarterNumber {
-  return quarterOfWeek(broadcastWeekOf(date, ysm));
+  return quarterOfMonth(broadcastMonthNumber(date, ysm));
 }
 
 /** Immutable descriptor of the Broadcast Quarter a date falls in. */
@@ -81,22 +89,12 @@ export function broadcastQuarter<DateType extends Date>(
   ysm: YearStartMonth,
 ): BroadcastQuarterInfo<DateType> {
   const dateObj = toDate(date) as DateType;
-  const { year, start: yearStart, end: yearEnd, weekCount } = broadcastYear(
-    dateObj,
-    ysm,
-  );
-  const weekNumber = Math.min(
-    differenceInWeeks(startOfBroadcastWeek(dateObj), yearStart) + 1,
-    weekCount,
-  );
-  const quarter = quarterOfWeek(weekNumber);
-  const start: DateType = addWeeks(yearStart, (quarter - 1) * 13);
-  const end: DateType =
-    quarter === 4
-      ? yearEnd
-      : subMilliseconds<DateType, DateType>(
-          addWeeks<DateType, DateType>(start, 13),
-          1,
-        );
-  return { year, quarter, start, end };
+  const year = broadcastYearOf(dateObj, ysm);
+  const quarter = quarterOfMonth(broadcastMonthNumber(dateObj, ysm));
+  return {
+    year,
+    quarter,
+    start: broadcastQuarterStart(year, quarter, ysm, dateObj),
+    end: broadcastQuarterEnd(year, quarter, ysm, dateObj),
+  };
 }
