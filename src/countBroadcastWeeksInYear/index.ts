@@ -1,12 +1,9 @@
-import {
-  broadcastWeekCount,
-  resolveYearStartMonth,
-} from "../_broadcastYearCore";
+import { resolveYearStartMonth, weekCountOf } from "../_broadcastCalendarCore";
 import type { BroadcastOptions } from "../types";
 
 export function countBroadcastWeeksInYear(
   year: number,
   options?: BroadcastOptions,
 ): 52 | 53 {
-  return broadcastWeekCount(year, resolveYearStartMonth(options));
+  return weekCountOf(year, resolveYearStartMonth(options));
 }

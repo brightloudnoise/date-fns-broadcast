@@ -1,11 +1,10 @@
 import type { DateArg } from "date-fns";
-import { broadcastMonthNumber } from "../_broadcastMonthCore";
-import { resolveYearStartMonth } from "../_broadcastYearCore";
+import { periodOf, resolveYearStartMonth } from "../_broadcastCalendarCore";
 import type { BroadcastOptions } from "../types";
 
 export function getBroadcastMonth(
   date: DateArg<Date>,
   options?: BroadcastOptions,
 ) {
-  return broadcastMonthNumber(date, resolveYearStartMonth(options));
+  return periodOf(date, "month", resolveYearStartMonth(options)).number;
 }

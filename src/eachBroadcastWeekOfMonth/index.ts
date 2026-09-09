@@ -1,13 +1,9 @@
 import type { DateArg } from "date-fns";
-import { startOfBroadcastMonth } from "../startOfBroadcastMonth";
-import { endOfBroadcastMonth } from "../endOfBroadcastMonth";
-import { eachBroadcastWeekBetween } from "../_internal";
+import { MONTH_BOUNDS_ANCHOR, periodOf, weeksBetweenDates } from "../_broadcastCalendarCore";
 
 export function eachBroadcastWeekOfMonth<DateType extends Date>(
   date: DateArg<DateType>,
 ): DateType[] {
-  return eachBroadcastWeekBetween(
-    startOfBroadcastMonth(date),
-    endOfBroadcastMonth(date),
-  );
+  const { start, end } = periodOf(date, "month", MONTH_BOUNDS_ANCHOR);
+  return weeksBetweenDates(start, end);
 }

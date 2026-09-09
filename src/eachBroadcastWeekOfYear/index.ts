@@ -1,12 +1,9 @@
-import {
-  broadcastWeeksOf,
-  resolveYearStartMonth,
-} from "../_broadcastYearCore";
+import { resolveYearStartMonth, weeksOfYear } from "../_broadcastCalendarCore";
 import type { BroadcastOptions } from "../types";
 
 export function eachBroadcastWeekOfYear(
   year: number,
   options?: BroadcastOptions,
 ): Date[] {
-  return broadcastWeeksOf(year, resolveYearStartMonth(options));
+  return weeksOfYear(year, resolveYearStartMonth(options));
 }

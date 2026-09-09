@@ -1,11 +1,10 @@
 import type { DateArg } from "date-fns";
-import { broadcastQuarter } from "../_broadcastQuarterCore";
-import { resolveYearStartMonth } from "../_broadcastYearCore";
+import { periodOf, resolveYearStartMonth } from "../_broadcastCalendarCore";
 import type { BroadcastOptions } from "../types";
 
 export function startOfBroadcastQuarter<DateType extends Date>(
   date: DateArg<DateType>,
   options?: BroadcastOptions,
 ): DateType {
-  return broadcastQuarter(date, resolveYearStartMonth(options)).start;
+  return periodOf(date, "quarter", resolveYearStartMonth(options)).start;
 }
