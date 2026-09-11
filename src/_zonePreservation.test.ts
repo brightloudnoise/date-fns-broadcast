@@ -82,9 +82,17 @@ function* zonedDays(zone: string) {
   }
 }
 
+/**
+ * Per-case timeout for these sweeps. A case walks 5,844 zoned dates: ~1.2s
+ * locally, but up to 6.2s on a GitHub runner, past vitest's 5s default. The
+ * first zone's `eachBroadcastWeekOfQuarter` case timed out in 3 of the first
+ * 21 CI test legs. 30s is roughly 5x the slowest runner time seen.
+ */
+const SWEEP_TIMEOUT_MS = 30_000;
+
 // One describe per zone, not a loop inside each case: a failure names the zone,
-// and no single case grows past vitest's default timeout on a slow runner.
-describe.each(ZONES)("zone preservation in %s", (ZONE, boundaryOffset) => {
+// and no case doubles in length.
+describe.each(ZONES)("zone preservation in %s", { timeout: SWEEP_TIMEOUT_MS }, (ZONE, boundaryOffset) => {
   it.each(FNS)("%s keeps the input's class", (_name, fn) => {
     for (const d of zonedDays(ZONE)) {
       expect(fn(d)).toBeInstanceOf(TZDate);
