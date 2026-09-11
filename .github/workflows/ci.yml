@@ -1,0 +1,190 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  # A new push supersedes the run in flight for the same ref.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Nothing here writes to the repository.
+permissions:
+  contents: read
+
+# Actions are pinned to commit SHAs, not tags: a tag can be moved, a SHA cannot.
+# Dependabot keeps the pins and their version comments current.
+
+jobs:
+  test:
+    name: Test (Node ${{ matrix.node }}, ${{ matrix.tz }})
+    runs-on: ubuntu-latest
+
+    # Three machine zones, because a runner is always UTC and a library that
+    # takes zone-carrying dates can be wrong in ways one zone never shows.
+    # v1.2.0 and v1.2.1 both shipped start/end functions that lost a TZDate's
+    # zone, and nothing noticed: that bug only appears when the machine's zone
+    # differs from the data's.
+    #
+    #   UTC               what every runner defaults to
+    #   America/Toronto   the machine this is developed on, so local == CI
+    #   Australia/Sydney  east of UTC, and southern-hemisphere DST, so it
+    #                     disagrees with the other two in both directions
+    #
+    # src/_zonePreservation.test.ts runs its data in both Sydney and Toronto,
+    # so every leg has a data zone to disagree with. Node 22 runs alongside 24
+    # because it is still a maintained LTS, and TZDate resolves zones through
+    # the Intl data that ships with Node. All six legs were measured passing
+    # before being added. See docs/adr/0002-ci-timezone-matrix.md.
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+        tz: [UTC, America/Toronto, Australia/Sydney]
+
+    env:
+      TZ: ${{ matrix.tz }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # The matrix is worthless if TZ is silently ignored, and that failure
+      # looks exactly like success: every leg runs in UTC and passes. So prove
+      # Node resolved the zone before trusting the tests.
+      - name: Confirm Node is running in ${{ matrix.tz }}
+        run: |
+          node -e '
+            const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (zone !== process.env.TZ) {
+              console.error(`TZ is ${process.env.TZ}, but Node resolved ${zone}`);
+              process.exit(1);
+            }
+            console.log(zone);
+          '
+      - run: pnpm test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    # Split out of `test` so the matrix does not build six identical bundles.
+    # The declaration build is the part that breaks on a TypeScript bump.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # A plain gate. main was clean when this was added, so there is no
+      # baseline to ratchet.
+      - run: pnpm typecheck
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Errors fail the job; warnings do not. There were none when this was added.
+      - run: pnpm lint
+
+  floor:
+    name: date-fns 4.0.0 floor
+    runs-on: ubuntu-latest
+
+    # peerDependencies promises date-fns >=4.0.0, but the lockfile pins a later
+    # 4.x, so without this job nothing ever runs against the version that
+    # promise starts at. One zone is enough: this checks the date-fns API
+    # surface, which the matrix above already covers across zones.
+    env:
+      TZ: UTC
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm add -D date-fns@4.0.0
+
+      # `pnpm add` exiting zero is not proof of what resolved. If it quietly
+      # kept the locked version this job would test that and pass.
+      - name: Confirm date-fns 4.0.0 resolved
+        run: |
+          node -e '
+            const { version } = JSON.parse(
+              require("fs").readFileSync("node_modules/date-fns/package.json", "utf8"),
+            );
+            if (version !== "4.0.0") {
+              console.error(`expected date-fns 4.0.0, got ${version}`);
+              process.exit(1);
+            }
+            console.log(version);
+          '
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    needs: [test, build, typecheck, lint, floor]
+
+    # The one check the main ruleset requires. The matrix makes a check per
+    # leg, and requiring each by name breaks on every rename or new leg; this
+    # job's name is the contract instead. `if: always()` so a failed or
+    # cancelled dependency turns this red. Without it, this job would be
+    # skipped, and a skipped required check counts as passing.
+    if: always()
+
+    steps:
+      - name: Require every job to have succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "job results: $RESULTS"
+          for result in $RESULTS; do
+            if [ "$result" != success ]; then
+              echo "::error::a required job finished as '$result'"
+              exit 1
+            fi
+          done

@@ -32,9 +32,21 @@ import {
  *    a machine actually set to that zone. `expectedFor` is that oracle: it runs
  *    the plain-`Date` path over a fixed offset-free reference, so a regression
  *    shows up as a millisecond difference rather than a plausible-looking date.
+ *
+ * Every case runs once per data zone. A machine-zone construction is only
+ * visible when the machine's zone differs from the data's, so a single data
+ * zone leaves one CI leg blind: against v1.2.1, Sydney data failed 22 of 30
+ * cases on UTC and Toronto machines but only 10 on a Sydney one. Two zones on
+ * opposite sides of UTC, in opposite DST phases, give every leg of the matrix
+ * (UTC, America/Toronto, Australia/Sydney) a zone to disagree with.
  */
 
-const ZONE = "Australia/Sydney"; // +10/+11, opposite DST phase to the CI zone
+/** Data zones, each with its UTC offset on 29 Dec 2025 (see the boundary case). */
+const ZONES = [
+  ["Australia/Sydney", "+11:00"], // east of UTC, southern-hemisphere DST
+  ["America/Toronto", "-05:00"], // west of UTC, northern-hemisphere DST
+] as const;
+
 const FNS = [
   ["startOfBroadcastWeek", startOfBroadcastWeek],
   ["endOfBroadcastWeek", endOfBroadcastWeek],
@@ -46,8 +58,14 @@ const FNS = [
   ["endOfBroadcastYear", endOfBroadcastYear],
 ] as const;
 
-/** Every day of 2024–2027, at four hours spread across the day. */
-function* zonedDays() {
+const LIST_FNS = [
+  ["eachBroadcastWeekOfMonth", eachBroadcastWeekOfMonth],
+  ["eachBroadcastWeekOfQuarter", eachBroadcastWeekOfQuarter],
+  ["eachBroadcastMonthOfQuarter", eachBroadcastMonthOfQuarter],
+] as const;
+
+/** Every day of 2024–2027 in `zone`, at four hours spread across the day. */
+function* zonedDays(zone: string) {
   for (let t = Date.UTC(2024, 0, 1); t <= Date.UTC(2027, 11, 31); t += 864e5) {
     const u = new Date(t);
     for (const hour of [0, 6, 12, 18]) {
@@ -58,21 +76,23 @@ function* zonedDays() {
         hour,
         0,
         0,
-        ZONE,
+        zone,
       );
     }
   }
 }
 
-describe("zone preservation", () => {
+// One describe per zone, not a loop inside each case: a failure names the zone,
+// and no single case grows past vitest's default timeout on a slow runner.
+describe.each(ZONES)("zone preservation in %s", (ZONE, boundaryOffset) => {
   it.each(FNS)("%s keeps the input's class", (_name, fn) => {
-    for (const d of zonedDays()) {
+    for (const d of zonedDays(ZONE)) {
       expect(fn(d)).toBeInstanceOf(TZDate);
     }
   });
 
   it.each(FNS)("%s keeps the input's zone offset", (_name, fn) => {
-    for (const d of zonedDays()) {
+    for (const d of zonedDays(ZONE)) {
       // A TZDate reports its own zone's offset; a stripped result reports the
       // machine's. Comparing offsets catches the strip even when the wall-clock
       // fields happen to read correctly.
@@ -83,7 +103,7 @@ describe("zone preservation", () => {
   });
 
   it.each(FNS)("%s answers the target zone's wall clock, not the machine's", (_name, fn) => {
-    for (const d of zonedDays()) {
+    for (const d of zonedDays(ZONE)) {
       const got = fn(d);
       // Re-reading the returned instant *in the zone* must give back the same
       // wall-clock fields the result reports. A machine-zone construction fails
@@ -104,27 +124,23 @@ describe("zone preservation", () => {
   });
 
   it("startOfBroadcastMonth resolves the boundary day in the input's zone", () => {
-    // 28 Dec 2025 is December's last Sunday, so 29 Dec starts broadcast
-    // January 2026 *in Sydney*. Read in Toronto the same instant is still
-    // 28 Dec, which is what a machine-zone construction answers.
+    // 28 Dec 2025 is December's last Sunday, so broadcast January 2026 starts
+    // at midnight on 29 Dec *in the input's zone*. A machine-zone construction
+    // puts that midnight on the machine's clock instead, off by the offset
+    // between the two; the ISO string carries the zone's offset, so it pins the
+    // exact instant.
     const d = new TZDate(2025, 11, 29, 0, 0, 0, ZONE);
     const start = startOfBroadcastMonth(d);
     expect(start.getFullYear()).toBe(2025);
     expect(start.getMonth()).toBe(11);
     expect(start.getDate()).toBe(29);
-    expect(start.toISOString()).toBe("2025-12-29T00:00:00.000+11:00");
+    expect(start.toISOString()).toBe(`2025-12-29T00:00:00.000${boundaryOffset}`);
   });
-
-  const LIST_FNS = [
-    ["eachBroadcastWeekOfMonth", eachBroadcastWeekOfMonth],
-    ["eachBroadcastWeekOfQuarter", eachBroadcastWeekOfQuarter],
-    ["eachBroadcastMonthOfQuarter", eachBroadcastMonthOfQuarter],
-  ] as const;
 
   // The each-family is date-keyed, so it has a zone to inherit even though the
   // ordinals it builds from are bare numbers.
   it.each(LIST_FNS)("%s keeps the zone across every element", (_name, fn) => {
-    for (const d of zonedDays()) {
+    for (const d of zonedDays(ZONE)) {
       for (const el of fn(d)) {
         expect(el).toBeInstanceOf(TZDate);
         const reread = new TZDate(el.getTime(), ZONE);
@@ -138,13 +154,13 @@ describe("zone preservation", () => {
   });
 
   it("countBroadcastWeeksInMonth agrees for a zoned and an unzoned reading", () => {
-    for (const d of zonedDays()) {
+    for (const d of zonedDays(ZONE)) {
       expect([4, 5]).toContain(countBroadcastWeeksInMonth(d));
     }
   });
 
   it("the month pair still brackets a zoned date", () => {
-    for (const d of zonedDays()) {
+    for (const d of zonedDays(ZONE)) {
       expect(startOfBroadcastMonth(d).getTime()).toBeLessThanOrEqual(d.getTime());
       expect(endOfBroadcastMonth(d).getTime()).toBeGreaterThanOrEqual(d.getTime());
     }

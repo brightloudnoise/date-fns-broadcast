@@ -14,3 +14,15 @@ updates:
         update-types:
           - "minor"
           - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      # The workflow pins actions to commit SHAs, which nobody bumps by hand.
+      # Same split as npm: routine bumps together, majors on their own.
+      actions:
+        update-types:
+          - "minor"
+          - "patch"

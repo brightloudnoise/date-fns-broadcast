@@ -36,6 +36,8 @@
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint",
     "release": "release-it"
   },
   "repository": {
