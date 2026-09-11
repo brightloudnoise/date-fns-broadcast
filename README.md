@@ -91,7 +91,9 @@ getBroadcastYear(date, { yearStartMonth: 8 }); // 2024
 startOfBroadcastYear(date, { yearStartMonth: 8 }); // 2024-08-26 (Monday on/before Sep 1, 2024)
 ```
 
-January and September are the only well-tested, documented anchor months.
+All twelve anchors are supported and tested. `src/_allAnchors.test.ts` sweeps every one of them over the properties that matter — periods containing the date they were resolved from, every boundary landing on a Monday, the year opening in the month it is anchored to and running twelve months, four quarters and 52 or 53 weeks, quarter numbers following month numbers, week numbers counting from where the year opens, and `getBroadcastYear(startOfBroadcastYearByNumber(y)) === y` across 2000-2100.
+
+January and September remain the two the examples use, because they are the anchors broadcast and network television actually run on. An April or July anchor is an ordinary fiscal arrangement and is no less supported.
 
 ## A note on date construction
 
