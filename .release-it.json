@@ -1,5 +1,6 @@
 {
   "hooks": {
+    "before:init": "bash scripts/require-green-ci.sh",
     "before:release": "pnpm build"
   },
   "git": {
